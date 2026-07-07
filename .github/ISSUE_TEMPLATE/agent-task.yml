@@ -1,0 +1,102 @@
+name: Agent task
+description: Structured GitHub Issue for Planner, Orchestrator, and Worker chats.
+title: "[WORKFLOW] "
+labels: ["workflow"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for work that may enter the GitHub-native agent queue.
+        Add `agent-ready` only after every readiness section is complete and the GitHub Project Status is `Ready`.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome should this issue produce?
+      placeholder: Describe the exact outcome, not just the activity.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Observable pass/fail criteria for completion.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependency / Blocker State
+      description: List blockers, blocked issues, sub-issues, linked PRs, and whether work can start from the base branch.
+      placeholder: "None, or: blocked by #12; depends on PR #18; can start from main after merge."
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation Expectations
+      description: Primary signal and required checks.
+      placeholder: |
+        Primary signal:
+        Required checks:
+        Manual verification:
+    validations:
+      required: true
+  - type: dropdown
+    id: security
+    attributes:
+      label: Security Impact
+      options:
+        - none
+        - reviewed
+        - security-sensitive
+    validations:
+      required: true
+  - type: textarea
+    id: security_notes
+    attributes:
+      label: Security Notes
+      description: Explain secrets, permissions, auth, API, dependency, or public exposure impact. Write `none` if not applicable.
+      placeholder: "none"
+    validations:
+      required: true
+  - type: dropdown
+    id: design
+    attributes:
+      label: UI / Design Impact
+      options:
+        - none
+        - UI copy
+        - visual state
+        - full UI flow
+    validations:
+      required: true
+  - type: textarea
+    id: design_notes
+    attributes:
+      label: UI / Design Notes
+      description: Include responsive, accessibility, Pages, or 3D fallback expectations. Write `none` if not applicable.
+      placeholder: "none"
+    validations:
+      required: true
+  - type: dropdown
+    id: qa_required
+    attributes:
+      label: QA Requirement
+      options:
+        - required
+        - low-risk exemption
+    validations:
+      required: true
+  - type: textarea
+    id: qa_notes
+    attributes:
+      label: QA Notes
+      description: Identify expected review path, or explain the exemption.
+      placeholder: "Required: spec compliance and code-quality review."
+    validations:
+      required: true

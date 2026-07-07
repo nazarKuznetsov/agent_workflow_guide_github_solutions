@@ -1,0 +1,52 @@
+name: Agent readiness audit
+
+on:
+  issues:
+    types: [labeled, edited, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  audit:
+    if: contains(github.event.issue.labels.*.name, 'agent-ready')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required readiness sections
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || "";
+            const required = [
+              "Goal",
+              "Acceptance Criteria",
+              "Dependency / Blocker State",
+              "Validation Expectations",
+              "Security Impact",
+              "Security Notes",
+              "UI / Design Impact",
+              "UI / Design Notes",
+              "QA Requirement",
+              "QA Notes",
+            ];
+
+            const missing = required.filter((section) => !body.includes(section));
+            if (missing.length === 0) {
+              return;
+            }
+
+            const message = [
+              "Readiness audit: `agent-ready` is present, but this issue is missing required readiness sections.",
+              "",
+              ...missing.map((section) => `- ${section}`),
+              "",
+              "Remove `agent-ready` or complete the issue form before Orchestrator Chat starts a Worker Chat.",
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: message,
+            });
