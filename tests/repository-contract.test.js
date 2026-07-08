@@ -85,6 +85,8 @@ test("site source presents the workflow and GitHub Pages answer", () => {
     "New project setup",
     "Existing project integration",
     "Copy/paste prompts",
+    "Canonical MD template",
+    "Full canonical GitHub workflow markdown",
     "Planner setup prompt",
     "Orchestrator queue prompt",
     "Worker delivery prompt",
@@ -113,6 +115,23 @@ test("site source presents the workflow and GitHub Pages answer", () => {
 
   for (const phrase of requiredPhrases) {
     assert.match(app, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be visible in App.tsx`);
+  }
+});
+
+test("site embeds the full canonical markdown guide", () => {
+  const app = read("src/App.tsx");
+
+  const requiredPhrases = [
+    "../docs/github-agent-workflow.md?raw",
+    "Canonical MD template",
+    "Full canonical GitHub workflow markdown",
+    "docs/github-agent-workflow.md",
+    "canonical-source",
+    "value={canonicalMarkdown}",
+  ];
+
+  for (const phrase of requiredPhrases) {
+    assert.match(app, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be embedded in App.tsx`);
   }
 });
 

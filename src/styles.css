@@ -472,6 +472,63 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.canonical-block {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.014)),
+    var(--surface);
+}
+
+.canonical-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.canonical-head h3 {
+  margin: 0;
+}
+
+.copy-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(53, 242, 163, 0.32);
+  border-radius: var(--radius);
+  background: rgba(53, 242, 163, 0.11);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  border-color: rgba(53, 242, 163, 0.54);
+  background: rgba(53, 242, 163, 0.16);
+}
+
+.canonical-source {
+  display: block;
+  width: 100%;
+  min-height: 620px;
+  max-height: 78vh;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  padding: 20px;
+  background: #070a0d;
+  color: #d7ffe9;
+  font: 0.86rem/1.62 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  white-space: pre;
+  tab-size: 2;
+}
+
 .terminal-card {
   padding: 22px;
   border: 1px solid var(--line);
@@ -617,6 +674,15 @@ pre {
 
   .process li {
     grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .canonical-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .copy-button {
+    width: 100%;
   }
 
   .site-footer {

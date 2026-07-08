@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import canonicalMarkdown from "../docs/github-agent-workflow.md?raw";
 import { supportsWebGL } from "./three/webglSupport";
 
 const ThreeHeroCanvas = lazy(() => import("./three/ThreeHeroCanvas"));
@@ -370,6 +371,32 @@ function HeroVisual() {
 }
 
 function App() {
+  const [canonicalCopied, setCanonicalCopied] = useState(false);
+
+  function copyCanonicalMarkdown() {
+    const copy = navigator.clipboard?.writeText
+      ? navigator.clipboard.writeText(canonicalMarkdown)
+      : Promise.reject(new Error("clipboard unavailable"));
+
+    copy
+      .catch(() => {
+        const area = document.createElement("textarea");
+        area.value = canonicalMarkdown;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.top = "-9999px";
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+      })
+      .then(() => {
+        setCanonicalCopied(true);
+        window.setTimeout(() => setCanonicalCopied(false), 1400);
+      });
+  }
+
   return (
     <main>
       <header className="site-header">
@@ -382,6 +409,7 @@ function App() {
           <a href="#setup">Setup</a>
           <a href="#gate">Gate</a>
           <a href="#operations">Operations</a>
+          <a href="#canonical">Canonical</a>
           <a href="#prompts">Prompts</a>
           <a href="#stack">Stack</a>
           <a href="https://github.com/nazarKuznetsov/agent_workflow_guide_github_solutions">GitHub</a>
@@ -572,6 +600,32 @@ no open blockers`}</pre>
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="canonical-section section-band" id="canonical">
+        <div className="section-heading">
+          <p className="eyebrow">Canonical MD</p>
+          <h2>Canonical MD template</h2>
+          <p>
+            This is the full GitHub-native canonical workflow markdown from docs/github-agent-workflow.md. Copy it into
+            Planner or Orchestrator when you need the same operating source that the repository stores.
+          </p>
+        </div>
+        <article className="canonical-block">
+          <div className="canonical-head">
+            <h3>Full canonical GitHub workflow markdown</h3>
+            <button className="copy-button" type="button" onClick={copyCanonicalMarkdown}>
+              {canonicalCopied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <textarea
+            className="canonical-source"
+            readOnly
+            spellCheck={false}
+            aria-label="Full canonical GitHub workflow markdown"
+            value={canonicalMarkdown}
+          />
+        </article>
       </section>
 
       <section className="setup-playbook section-band">
