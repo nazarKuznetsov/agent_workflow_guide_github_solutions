@@ -46,6 +46,27 @@ body:
         Manual verification:
     validations:
       required: true
+  - type: textarea
+    id: routing_grounding
+    attributes:
+      label: Model Router / Grounding
+      description: State the expected Model Router decision and required Graphify or fallback repository tracing.
+      placeholder: |
+        Model Router:
+        Graphify or fallback repository tracing:
+        Owner layer:
+    validations:
+      required: true
+  - type: dropdown
+    id: tdd_requirement
+    attributes:
+      label: TDD RED/GREEN
+      description: Production behavior changes require RED before GREEN. Use exemption only for docs/config-only work.
+      options:
+        - required
+        - docs/config-only exemption
+    validations:
+      required: true
   - type: dropdown
     id: security
     attributes:
@@ -96,7 +117,11 @@ body:
     id: qa_notes
     attributes:
       label: QA Notes
-      description: Identify expected review path, or explain the exemption.
-      placeholder: "Required: spec compliance and code-quality review."
+      description: Identify expected QA subagents review path, or explain the exemption.
+      placeholder: |
+        QA subagents:
+        Primary signal:
+        Secondary signals:
+        Exemption:
     validations:
       required: true

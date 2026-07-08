@@ -44,13 +44,21 @@ Planner Chat owns the operating system:
 Planner Chat does not silently execute delivery work. It prepares the queue so
 Orchestrator and Worker chats can operate without guessing.
 
+Planner Chat also owns **Process Improvement**. When repeated worker failures,
+weak issue contracts, missing QA evidence, unclear Project state, or noisy PR
+history appear, Planner turns those observations into guide changes, template
+changes, or GitHub Project/label updates. It does not ask Orchestrator to
+rewrite canonical rules during a delivery heartbeat.
+
 ### Orchestrator Chat
 
 Orchestrator Chat owns queue execution:
 
 - reads the GitHub Project ready queue;
+- runs a heartbeat every 20-30 minutes;
 - filters by `Project Status = Ready` and label `agent-ready`;
 - checks issue dependencies, blockers, sub-issues, and linked PRs;
+- calls the Model Router before creating a Worker Chat;
 - starts workers only for issues that pass the readiness gate;
 - maintains a state ledger in issue comments or project updates;
 - moves issues between Ready, In Progress, Review, Blocked, and Done.
@@ -72,6 +80,11 @@ Worker Chat owns exactly one delivery unit:
 Worker Chat implements only the issue scope. It links the PR back with
 `Closes #123`, provides evidence in the PR template, and does not bundle
 unrelated work.
+
+Worker Chat must prove the delivery path, not merely summarize it. The required
+evidence is TDD RED/GREEN, Graphify or fallback repository tracing, QA
+subagents or a valid low-risk exemption, validation results, security/design
+notes, and a Worker completion report.
 
 ## Human-Only Control Plane
 
@@ -118,6 +131,9 @@ Orchestrator Chat is responsible for the operational GitHub actions:
   and `QA Required`;
 - write state ledger comments with active workers, blockers, PR links, CI
   state, and next action;
+- enforce `Max worker tasks per Orchestrator Chat: 5`;
+- move itself to `DRAINING` after the fifth worker launch and to `RETIRED`
+  after handoff is accepted;
 - generate the task-scoped Worker packet;
 - verify the Worker completion report and QA block before moving work to
   Review or Done;
@@ -126,6 +142,114 @@ Orchestrator Chat is responsible for the operational GitHub actions:
 This is the closest GitHub-native equivalent to the Linear flow: GitHub Issues
 replace Linear issues, GitHub Projects replace Linear status views, and
 Orchestrator Chat performs the issue/project mutations through GitHub tools.
+
+## Orchestrator Operating Loop
+
+Orchestrator Chat is an operational coordinator, not a delivery worker. It
+keeps short context, runs a heartbeat every 20-30 minutes, and records durable
+state in GitHub.
+
+On each heartbeat:
+
+1. Read the GitHub Project Ready Queue and active In Progress issues.
+2. Read blockers, sub-issues, linked PRs, Actions state, and recent comments.
+3. Update the state ledger comment with active workers, claimed issues,
+   branches, PR links, task count, blockers, and next action.
+4. Re-check PR/CI watcher state for workers already in flight.
+5. Apply the readiness gate before any new worker launch.
+6. Run the Model Router for each executable issue.
+7. Build a task-scoped Worker packet.
+8. Start at most the available worker capacity.
+9. Verify Worker completion report, QA subagents evidence, validation results,
+   and PR state before moving an issue to Review or Done.
+10. Route repeated process defects to Planner Chat as Process Improvement.
+
+Operating limits:
+
+```text
+Max worker tasks per Orchestrator Chat: 5
+heartbeat every 20-30 minutes
+state ledger location: GitHub issue comment or GitHub Project update
+old orchestrator states: DRAINING, RETIRED
+```
+
+### Model Router
+
+Before launching a Worker Chat, Orchestrator chooses the model and reasoning
+effort from the issue risk:
+
+- use the strongest available model for ambiguous work, shared contracts,
+  security-sensitive code, migrations, auth, permissions, public API changes,
+  or multi-surface UI flows;
+- use a standard coding model for narrow docs, template, copy, or low-risk
+  implementation work;
+- if routing is unavailable, choose the conservative strongest-model default
+  and record the reason in the Worker packet.
+
+The Model Router decision is part of the state ledger and the Worker packet.
+
+### Handoff continuation
+
+After the fifth worker launch, the current Orchestrator must stop launching new
+work. It updates the state ledger, emits handoff YAML, enters `DRAINING`, and
+creates a replacement Orchestrator Chat if thread-management tools are
+available. If not, it returns a precise `Human action required` block.
+
+The handoff YAML must include enough GitHub-native state for a takeover audit:
+
+```yaml
+orchestrator_handoff:
+  schema_version: 1
+  handoff_reason: task_budget_reached | manual_rotation | context_risk
+  previous_orchestrator:
+    status: DRAINING
+    task_count: 5
+  repo:
+    name:
+    base_branch:
+  github_project:
+    ready_filter: "Status = Ready + label:agent-ready + no open blockers"
+    state_ledger_issue:
+  active_workers:
+    - issue_number:
+      worker_thread_id:
+      worktree_path:
+      branch:
+      pr_url:
+      status:
+  claimed_issues:
+    - issue_number:
+      status:
+      owner_thread_id:
+  blockers:
+    - issue_number:
+      blocker:
+      next_decision_needed:
+  next_executable_tasks:
+    - issue_number:
+      reason_ready:
+      recommended_model:
+  validation_security_design_risks:
+    - issue_number:
+      risk:
+      required_gate:
+  continuation:
+    new_orchestrator_created: yes/no
+    new_orchestrator_thread_id:
+    human_action_required: yes/no
+    continuation_prompt_included: yes
+```
+
+The replacement Orchestrator starts with takeover audit, not worker launch:
+
+1. Parse the handoff YAML.
+2. Confirm active workers, claimed issues, branches, worktrees, PR links, and
+   Project state from GitHub.
+3. Write `Orchestrator handoff accepted` to the state ledger.
+4. Reset its task count to `0/5`.
+5. Continue the normal heartbeat only after the audit is complete.
+6. Once the old Orchestrator sees the acceptance, the old Orchestrator becomes
+   `RETIRED`.
 
 ## Automated GitHub Setup Packet
 
@@ -229,6 +353,14 @@ An issue is not ready if it is missing readiness fields, has an unresolved
 dependency, bundles multiple independent PR-sized changes, requires an
 unapproved security/dependency/release decision, or cannot be validated with the
 available repository tooling.
+
+Before the issue enters Ready, the issue body must also name:
+
+- the Model Router expectation or the reason Orchestrator should choose it;
+- Graphify or fallback repository tracing requirements;
+- whether TDD RED/GREEN is mandatory or exempted as docs/config-only work;
+- whether QA subagents are required;
+- the Primary signal and secondary validation signals.
 
 ## 4. Project Schema
 
@@ -411,20 +543,25 @@ Use this before starting Worker Chat.
 4. Добавить labels и GitHub Project fields.
 5. Построить dependency graph по blockers/sub-issues/linked PRs.
 6. Применить readiness gate.
-7. Сгенерировать task-scoped Worker packet.
-8. Проверить QA block перед переводом в Review или Done.
+7. Запустить heartbeat every 20-30 minutes и вести state ledger в GitHub issue comments или Project updates.
+8. Перед каждым Worker вызвать Model Router и выбрать model/reasoning effort.
+9. Сгенерировать task-scoped Worker packet.
+10. Соблюдать Max worker tasks per Orchestrator Chat: 5.
+11. После пятой worker-задачи перейти в DRAINING, создать handoff YAML и запустить replacement Orchestrator или вернуть Human action required.
+12. Проверить QA block перед переводом в Review или Done.
 
 Ready gate:
 - Project Status = Ready;
 - есть label agent-ready;
 - нет открытых blockers;
 - issue body содержит Goal, Acceptance Criteria, Dependency / Blocker State, Validation Expectations, Security Impact, UI / Design Impact и QA Requirement.
+- issue body содержит Model Router, Graphify or fallback repository tracing, TDD RED/GREEN, QA subagents и Primary signal.
 
 Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields, Pages action и gh commands.
 
 Не выполняй production code. Не делай delivery сам.
 
-Верни setup_report, created/updated issue URLs, Project state, Worker packet и краткий state ledger comment.
+Верни setup_report, created/updated issue URLs, Project state, Worker packet, task count, handoff status и краткий state ledger comment.
 ```
 
 ### Worker delivery prompt
@@ -442,15 +579,18 @@ Worker packet is generated by Orchestrator.
 Перед кодом:
 1. Прочитай issue body, comments, labels, Project fields, blockers, linked PRs, AGENTS.md и релевантные docs.
 2. Подтверди, что Ready gate выполнен: Project Status = Ready + label agent-ready + нет blockers.
-3. Создай одну branch: feat/<issue>-short-slug, fix/<issue>-short-slug или docs/<issue>-short-slug.
+3. Подтверди Graphify or fallback repository tracing и owner layer до RED.
+4. Создай одну branch: feat/<issue>-short-slug, fix/<issue>-short-slug или docs/<issue>-short-slug.
 
 Delivery:
-1. Сделай минимальное изменение, которое закрывает acceptance criteria.
-2. Запусти validation из issue и ближайшие дешевые проверки проекта.
-3. Открой один PR с Closes #<номер>.
-4. Заполни PR template evidence: acceptance, validation, security, design, repo/API grounding, risks, rollout.
+1. Сделай TDD RED/GREEN: сначала failing test, затем минимальный implementation, затем refactor только после green.
+2. Сделай минимальное изменение, которое закрывает acceptance criteria.
+3. Запусти validation из issue и ближайшие дешевые проверки проекта.
+4. Запусти QA subagents read-only перед READY_FOR_REVIEW: test coverage, regression, security/UI reviewers when applicable.
+5. Открой один PR с Closes #<номер>.
+6. Заполни PR template evidence: acceptance, TDD RED/GREEN, validation, security, design, Graphify or fallback repository tracing, QA subagents, risks, rollout.
 
-Не закрывай задачу без validation evidence.
+Не закрывай задачу без validation evidence и Worker completion report.
 ```
 
 ### QA verification block
@@ -496,13 +636,63 @@ Worker Chat follows this sequence:
 
 1. Read the issue, comments, labels, project fields, linked PRs, and blockers.
 2. Confirm the issue passes `Project Status = Ready` plus `agent-ready`.
-3. Create one issue-linked branch, for example `feat/123-short-slug`.
-4. Implement the smallest coherent change that satisfies the issue.
-5. Run the issue's required validation.
-6. Open one PR with `Closes #123`.
-7. Fill the PR template with evidence, not summaries alone.
-8. Move the issue to Review.
-9. After merge and required checks, move the issue to Done.
+3. Confirm the Model Router selection and the task-scoped Worker packet.
+4. Run Graphify or fallback repository tracing in the worktree before RED.
+5. Create one issue-linked branch, for example `feat/123-short-slug`.
+6. Use TDD RED/GREEN before production changes unless the issue explicitly
+   documents a docs/config-only exemption.
+7. Implement the smallest coherent change that satisfies the issue.
+8. Run the issue's required validation and nearest cheap checks.
+9. Run QA subagents as read-only reviewers before READY_FOR_REVIEW: test
+   coverage and regression by default, plus security or UI/design reviewers
+   when the issue touches those surfaces.
+10. Open one PR with `Closes #123`.
+11. Fill the PR template with evidence, not summaries alone.
+12. Post the Worker completion report to the GitHub Issue and, if available,
+    to Orchestrator Chat.
+13. Orchestrator, not Worker, moves the issue to Review after evidence checks.
+14. After merge and required checks, Orchestrator moves the issue to Done.
+
+Worker completion report:
+
+```md
+## Worker completion report
+
+Issue: #<number>
+PR: <url>
+Branch: <branch>
+
+Acceptance:
+- <criterion>: met/not met + evidence
+
+TDD RED/GREEN:
+- RED:
+- GREEN:
+- Refactor:
+- Exemption:
+
+Graphify or fallback repository tracing:
+- Owner layer:
+- Files inspected:
+- Contract/API impact:
+
+Validation:
+- Primary signal status:
+- Secondary signal status:
+- Commands:
+
+Security / design:
+- Security impact:
+- UI/design impact:
+
+QA subagents:
+- Test coverage reviewer:
+- Regression reviewer:
+- Security reviewer:
+- UI/design reviewer:
+- Findings resolved:
+- Remaining risk:
+```
 
 ## 8. Pull Request Evidence
 
@@ -511,8 +701,13 @@ Every worker PR must include:
 - linked issue;
 - what changed;
 - acceptance criteria evidence;
-- TDD evidence or a clear docs/config exemption;
+- TDD RED/GREEN evidence or a clear docs/config exemption;
 - validation commands and results;
+- Graphify or fallback repository tracing;
+- QA subagents findings and resolution;
+- Worker completion report summary;
+- Primary signal status;
+- Secondary signal status;
 - security notes;
 - design notes when applicable;
 - repository/API grounding;
@@ -540,7 +735,28 @@ The included readiness audit workflow comments when `agent-ready` is applied to
 an issue that is missing required readiness sections. It is intentionally a
 guardrail, not a replacement for Orchestrator judgment.
 
-## 10. GitHub Pages Presentation
+## 10. Shared Engineering Standards
+
+These standards mirror the Linear guide but keep GitHub as the system of
+record.
+
+- Branches stay short and issue-linked: `feat/123-short-slug`,
+  `fix/123-short-slug`, `docs/123-short-slug`, `test/123-short-slug`,
+  `refactor/123-short-slug`, or `chore/123-short-slug`.
+- One GitHub Issue maps to one Worker branch and one PR unless Planner or
+  Orchestrator decomposes it first.
+- PRs never include AI/Codex attribution footers.
+- Security-sensitive work must include explicit tests or substitute validation
+  for auth, permissions, tokens, PII, file handling, webhooks, external
+  integrations, and public exposure.
+- UI work must include states, responsive behavior, accessible contrast, and
+  GitHub Pages/WebGL fallback checks.
+- Documentation changes should update durable workflow context without
+  duplicating implementation details.
+- Versioning, release tags, and deployment changes require an explicit GitHub
+  Issue or human approval.
+
+## 11. GitHub Pages Presentation
 
 The Pages site presents this model to a team. It should answer:
 
@@ -554,7 +770,36 @@ The Pages site presents this model to a team. It should answer:
 GitHub Pages is safe for this use case because the site is static. Do not place
 private tokens, secret API keys, or orchestration state in frontend code.
 
-## 11. Done Definition
+## 12. Process Improvement
+
+Process Improvement belongs to Planner Chat. Orchestrator and Worker can create
+notes, but they do not rewrite canonical workflow rules during delivery.
+
+Create a Process Improvement note when:
+
+- readiness fields are repeatedly missing or ambiguous;
+- issue scope repeatedly becomes multiple PR-sized changes;
+- Worker packets miss Model Router, Graphify or fallback repository tracing,
+  validation, or QA requirements;
+- TDD RED/GREEN evidence is weak or skipped without a valid exemption;
+- QA subagents repeatedly find the same class of regression;
+- GitHub Project state, labels, or PR template fields create noisy history;
+- GitHub Pages deployment constraints are unclear.
+
+Use this template in a GitHub Issue or Planner handoff:
+
+```md
+## Process Improvement
+
+Observed issue:
+Affected surface: Planner / Orchestrator / Worker / GitHub Project / templates / Pages
+Evidence:
+Recommended rule or template change:
+Risk if unchanged:
+Who should decide:
+```
+
+## 13. Done Definition
 
 A workflow change is done when:
 
@@ -569,6 +814,8 @@ A delivery issue is done when:
 
 - the linked PR is merged;
 - acceptance criteria evidence is present;
+- TDD RED/GREEN, Graphify or fallback repository tracing, QA subagents, and
+  Worker completion report evidence are present or explicitly exempted;
 - required checks pass;
 - risks and rollout notes are captured;
 - the issue is moved to Done.

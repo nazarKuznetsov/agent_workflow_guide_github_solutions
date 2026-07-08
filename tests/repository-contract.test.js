@@ -51,6 +51,18 @@ test("workflow guide defines the GitHub-native operating model", () => {
     "gh label create",
     "gh project field-create",
     "Human action required",
+    "Max worker tasks per Orchestrator Chat: 5",
+    "heartbeat every 20-30 minutes",
+    "DRAINING",
+    "RETIRED",
+    "handoff YAML",
+    "takeover audit",
+    "Model Router",
+    "Graphify or fallback repository tracing",
+    "TDD RED/GREEN",
+    "QA subagents",
+    "Worker completion report",
+    "Process Improvement",
   ];
 
   for (const phrase of requiredPhrases) {
@@ -88,6 +100,15 @@ test("site source presents the workflow and GitHub Pages answer", () => {
     "gh label create",
     "gh project field-create",
     "Human action required",
+    "Max worker tasks per Orchestrator Chat: 5",
+    "heartbeat every 20-30 minutes",
+    "DRAINING",
+    "handoff YAML",
+    "Model Router",
+    "Graphify or fallback repository tracing",
+    "TDD RED/GREEN",
+    "QA subagents",
+    "Worker completion report",
   ];
 
   for (const phrase of requiredPhrases) {
@@ -99,4 +120,34 @@ test("Vite config uses the GitHub Pages project base path", () => {
   const config = read("vite.config.ts");
 
   assert.match(config, /base:\s*["']\/agent_workflow_guide_github_solutions\/["']/);
+});
+
+test("GitHub templates require canonical worker evidence", () => {
+  const issueForm = read(".github/ISSUE_TEMPLATE/agent-task.yml");
+  const prTemplate = read(".github/pull_request_template.md");
+
+  const issueRequiredPhrases = [
+    "Model Router",
+    "Graphify or fallback repository tracing",
+    "TDD RED/GREEN",
+    "QA subagents",
+    "Primary signal",
+  ];
+
+  const prRequiredPhrases = [
+    "TDD RED/GREEN evidence",
+    "Graphify or fallback repository tracing",
+    "QA subagents",
+    "Worker completion report",
+    "Primary signal status",
+    "Secondary signal status",
+  ];
+
+  for (const phrase of issueRequiredPhrases) {
+    assert.match(issueForm, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be required by the issue form`);
+  }
+
+  for (const phrase of prRequiredPhrases) {
+    assert.match(prTemplate, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be required by the PR template`);
+  }
 });
