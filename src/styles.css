@@ -349,6 +349,8 @@ h3 {
 .gate-card p,
 .capability-card p,
 .process p,
+.automation-step p,
+.artifact-card p,
 .setup-card p,
 .checklist-panel p,
 .prompt-card p {
@@ -393,6 +395,55 @@ h3 {
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
   gap: 28px;
   align-items: center;
+}
+
+.automation-lane {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.automation-step {
+  min-width: 0;
+  min-height: 190px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(53, 242, 163, 0.1), rgba(255, 255, 255, 0.018)),
+    var(--surface);
+}
+
+.automation-step h3 {
+  font-size: 0.98rem;
+}
+
+.artifact-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.artifact-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.32fr) minmax(0, 1fr);
+  gap: 22px;
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.014)),
+    var(--surface);
+}
+
+.artifact-card pre {
+  padding: 18px;
+  border: 1px solid rgba(113, 215, 255, 0.16);
+  border-radius: var(--radius);
+  background: #070a0d;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .setup-grid {
@@ -519,6 +570,7 @@ pre {
   .hero,
   .positioning,
   .proof,
+  .artifact-card,
   .checklist-grid,
   .prompt-card {
     grid-template-columns: 1fr;
@@ -543,6 +595,7 @@ pre {
 
   .capability-grid,
   .gate-grid,
+  .automation-lane,
   .setup-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -602,6 +655,7 @@ pre {
   .status-strip,
   .capability-grid,
   .gate-grid,
+  .automation-lane,
   .setup-grid {
     grid-template-columns: 1fr;
   }
