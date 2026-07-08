@@ -158,6 +158,60 @@ const existingProjectSteps: Step[] = [
   },
 ];
 
+const existingLinearProjectSteps: Step[] = [
+  {
+    title: "1. Linear workflow audit",
+    copy: "Сначала проверь Linear teams, projects, statuses, cycles, labels, templates, blockers, dependencies, ready filters и текущий linked PR flow.",
+  },
+  {
+    title: "2. Linear-to-GitHub mapping",
+    copy: "Planner сопоставляет Linear issue/status/label/blocker/project/cycle с GitHub Issue, GitHub Project Status, labels, dependencies, views и PR with Closes #.",
+  },
+  {
+    title: "3. Transitional source of truth",
+    copy: "Linear остается product/backlog source, пока migration partial. GitHub Issue становится agent task contract, GitHub Project становится execution queue.",
+  },
+  {
+    title: "4. Mirror only pilot work",
+    copy: "Не переписывай весь backlog. Выбери 3-5 Linear issues, создай или зеркаль их в GitHub Issues и сохрани Linear links в body/comments.",
+  },
+  {
+    title: "5. Launch workers only from GitHub",
+    copy: "Orchestrator не запускает Worker напрямую из Linear issue. Нужен GitHub Issue с Ready status, agent-ready label, no blockers и полными readiness fields.",
+  },
+  {
+    title: "6. Preserve backlinks",
+    copy: "GitHub Issue links back to Linear, PR links with Closes #<github-issue>, and Linear receives GitHub Issue/PR links when access allows.",
+  },
+];
+
+const noToolingProjectSteps: Step[] = [
+  {
+    title: "1. No-tooling bootstrap audit",
+    copy: "Проверь README, docs, scripts, tests, CI, deploy, branch protection expectations, .github templates и включены ли Issues, Projects, Actions и Pages.",
+  },
+  {
+    title: "2. Planner writes GitHub Setup Packet",
+    copy: "Packet должен описывать repo settings, labels, Project fields, Ready Queue, Issue Form, PR template, readiness audit, Pages setup и fallback commands.",
+  },
+  {
+    title: "3. Orchestrator applies setup",
+    copy: "Orchestrator применяет gh repo edit --enable-issues --enable-projects, gh label create, gh project field-create, template patches и setup verification.",
+  },
+  {
+    title: "4. First issues come from Planner handoff",
+    copy: "Human не создает delivery issues вручную. Orchestrator создает setup-sized issues: templates, readiness audit, CI validation и один pilot task.",
+  },
+  {
+    title: "5. Product delivery waits for setup",
+    copy: "agent-ready ставится только на задачи с полным контрактом. Product work начинается после guide, templates, labels, Project fields и PR evidence path.",
+  },
+  {
+    title: "6. Exact fallback when access is missing",
+    copy: "Если прав не хватает, Orchestrator возвращает Human action required с точными commands, patches, issue bodies, labels, Project fields и UI paths.",
+  },
+];
+
 const setupPacketChecklist = [
   "Planner returns GitHub Setup Packet with repo_settings, labels, project_fields, pages, template_files, ready_queue, fallback_commands.",
   "Orchestrator applies GitHub setup after gh auth status or equivalent GitHub tool/API access check.",
@@ -341,6 +395,68 @@ QA evidence:
 5. Какие team-specific правила нужно добавить в AGENTS.md и PR template.
 
 Не удаляй существующие правила без явного решения человека.`,
+  },
+  {
+    title: "Existing Linear project prompt",
+    copy: "Используй для проекта, где backlog и продуктовая очередь уже живут в Linear.",
+    prompt: `Ты Planner Chat. Нужно внедрить GitHub-native agent workflow в проект, который уже работает через Linear.
+
+Сначала сделай Linear workflow audit:
+- Linear teams/projects/statuses/cycles/labels/templates;
+- текущие ready filters, blockers, dependencies и linked PR flow;
+- кто принимает product priority, acceptance, release и QA решения;
+- какие Linear поля обязательны до разработки.
+
+Затем сделай Linear-to-GitHub mapping:
+- Linear issue -> GitHub Issue;
+- Linear status -> GitHub Project Status;
+- Linear label -> GitHub label;
+- Linear dependency/blocker -> GitHub dependency, sub-issue или blocker link;
+- Linear project/cycle -> GitHub Project view, milestone или label;
+- Linear linked PR -> GitHub PR with Closes #<github-issue> and Linear backlink.
+
+Правила:
+1. Не переписывай весь Linear backlog.
+2. Выбери 3-5 Linear issues для pilot.
+3. Для каждой pilot-задачи создай или опиши GitHub Issue с полным Agent task contract.
+4. Linear остается product/backlog source, пока migration partial.
+5. GitHub Issue и GitHub Project становятся execution source для agent delivery.
+6. Orchestrator не запускает Worker напрямую из Linear issue.
+7. Если не хватает доступа, верни Human action required с точными Linear URLs, GitHub issue bodies, labels, Project fields и comments.
+
+Верни GitHub Setup Packet, Linear-to-GitHub mapping, pilot issue list, transitional source of truth и Orchestrator seed packet.`,
+  },
+  {
+    title: "No-tooling bootstrap prompt",
+    copy: "Используй для проекта без Linear, GitHub Project queue, agent-ready labels и агентного процесса.",
+    prompt: `Ты Planner Chat. Нужно внедрить GitHub-native agent workflow в проект, где вообще нет Linear, GitHub Project queue, agent-ready labels или агентного процесса.
+
+Это No-tooling bootstrap. Сначала создается operating system, потом product delivery.
+
+Сначала прочитай:
+- README.md и docs;
+- AGENTS.md если есть;
+- .github templates/workflows если есть;
+- package manager, scripts, tests, build, lint, deploy;
+- branch protection/release expectations, если они описаны;
+- включены ли Issues, Projects, Actions и Pages.
+
+Сделай GitHub Setup Packet:
+- repo_settings: issues/projects/pages/actions;
+- labels: agent-ready, blocked, qa-required, security-review, design-review, docs, automation, github-pages, workflow;
+- project_fields: Status, Work Type, Risk, QA Required;
+- ready_queue: Status = Ready + label:agent-ready + no open blockers;
+- template_files: AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template, readiness audit, Pages workflow if needed;
+- fallback_commands: exact gh/API/UI actions.
+
+Правила:
+1. Первые GitHub Issues создает Orchestrator из Planner handoff.
+2. Human не проектирует issue bodies вручную.
+3. Первые задачи должны быть setup-sized: templates, readiness audit, CI validation, one pilot issue.
+4. Product delivery начинается только после setup verification.
+5. Если доступа нет, верни Human action required с точными командами, patches, issue bodies, labels, Project fields и UI paths.
+
+Верни GitHub Setup Packet, Orchestrator seed packet, first setup issues, validation commands и blocked access list.`,
   },
 ];
 
@@ -639,6 +755,44 @@ no open blockers`}</pre>
         </div>
         <div className="setup-grid">
           {existingProjectSteps.map((step) => (
+            <article className="setup-card" key={step.title}>
+              <h3>{step.title}</h3>
+              <p>{step.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="setup-playbook section-band">
+        <div className="section-heading">
+          <p className="eyebrow">Linear adoption path</p>
+          <h2>Existing project with Linear.</h2>
+          <p>
+            Если продуктовая очередь уже в Linear, не удаляй ее сразу. Сначала зафиксируй Linear workflow audit,
+            сделай Linear-to-GitHub mapping и запускай Workers только из mirrored GitHub Issues.
+          </p>
+        </div>
+        <div className="setup-grid">
+          {existingLinearProjectSteps.map((step) => (
+            <article className="setup-card" key={step.title}>
+              <h3>{step.title}</h3>
+              <p>{step.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="setup-playbook section-band">
+        <div className="section-heading">
+          <p className="eyebrow">Bootstrap path</p>
+          <h2>Existing project without agent workflow.</h2>
+          <p>
+            Если нет Linear, GitHub Project queue, labels или шаблонов, начинай с No-tooling bootstrap: Planner пишет
+            GitHub Setup Packet, Orchestrator applies setup, и только потом появляется первый pilot Worker PR.
+          </p>
+        </div>
+        <div className="setup-grid">
+          {noToolingProjectSteps.map((step) => (
             <article className="setup-card" key={step.title}>
               <h3>{step.title}</h3>
               <p>{step.copy}</p>

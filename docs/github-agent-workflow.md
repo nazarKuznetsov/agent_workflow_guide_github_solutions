@@ -472,6 +472,97 @@ protection, or a backlog.
 Do not mark legacy issues as `agent-ready` merely because they are important.
 They are ready only when the readiness gate is complete.
 
+## Existing project with Linear
+
+Use this path when the project already runs through Linear and the team wants
+to add the GitHub-native agent workflow without losing the current product
+backlog.
+
+The goal is not to delete Linear on day one. The goal is to keep Linear useful
+for product planning while GitHub becomes the operational system of record for
+agent delivery, PR review, CI evidence, and queue automation.
+
+1. Run a **Linear workflow audit** before changing GitHub:
+   - current Linear teams, projects, statuses, cycles, labels, issue templates,
+     dependencies, blocked states, and ready filters;
+   - how Linear issues link to GitHub pull requests today;
+   - who owns product priority, acceptance decisions, release decisions, and QA
+     signoff;
+   - which Linear fields are required for work to become implementation-ready.
+2. Ask Planner Chat for a **Linear-to-GitHub mapping**:
+   - Linear issue -> GitHub Issue;
+   - Linear status -> GitHub Project `Status`;
+   - Linear label -> GitHub label;
+   - Linear dependency/blocker -> GitHub dependency, sub-issue, or blocker link;
+   - Linear project/cycle -> GitHub Project view, milestone, or label;
+   - Linear linked PR -> GitHub PR with `Closes #123` plus a Linear backlink.
+3. Define the transitional source of truth:
+   - Linear remains the product/backlog source while the migration is partial;
+   - GitHub Issue is the agent task contract;
+   - GitHub Project is the agent execution queue;
+   - PR template and CI remain the delivery evidence layer.
+4. Add `AGENTS.md`, `docs/github-agent-workflow.md`, Issue Form, PR template,
+   readiness audit, labels, and GitHub Project fields without removing the
+   existing Linear workflow.
+5. Pilot only three to five Linear issues. For each one, create or mirror a
+   GitHub Issue with the full Agent task contract and preserve the Linear URL
+   in the issue body or first comment.
+6. Orchestrator must not launch a Worker directly from a Linear issue. It
+   launches only after the Linear item has a GitHub Issue with `Project Status
+   = Ready`, label `agent-ready`, no open blockers, and complete readiness
+   fields.
+7. Keep bidirectional links during the transition:
+   - GitHub Issue body links back to Linear;
+   - GitHub PR uses `Closes #<github-issue>` and includes the Linear link in
+     the evidence;
+   - Linear issue comment links to the GitHub Issue/PR when automation or a
+     human has permission to add it.
+8. After the pilot, Planner updates the mapping and decides whether more work
+   should remain in Linear, be mirrored into GitHub, or be fully migrated.
+
+If Orchestrator lacks Linear or GitHub access, it returns `Human action
+required` with the exact Linear issue URLs, GitHub Issue body, labels, Project
+fields, and comments that must be created.
+
+## Existing project without agent workflow
+
+Use this path when the repository has normal development history but no Linear,
+no GitHub Project queue, no agent-ready labels, and no established
+Planner/Orchestrator/Worker operating model.
+
+This is a **No-tooling bootstrap**. The first deliverable is the operating
+system itself, not product delivery.
+
+1. Audit the repository before inventing process:
+   - `README.md`, existing docs, setup scripts, test scripts, package manager,
+     CI, deploy flow, release constraints, branch protection expectations, and
+     review norms;
+   - current `.github/` templates and workflows, if any;
+   - whether Issues, Projects, Actions, and Pages are enabled;
+   - validation commands that a Worker can actually run locally.
+2. Planner Chat generates a `GitHub Setup Packet` that includes repo settings,
+   labels, GitHub Project fields, Ready Queue rule, Issue Form, PR evidence
+   template, readiness audit, Pages setup if relevant, and fallback commands.
+3. Orchestrator applies GitHub setup through GitHub tools / `gh` / GitHub API:
+   `gh repo edit --enable-issues --enable-projects`, `gh label create`,
+   `gh project field-create`, template-file patches, and setup verification.
+4. The first GitHub Issues are created from Planner handoff, not manually by a
+   human. They should be setup-sized tasks such as "install templates",
+   "verify CI/readiness audit", or "pilot one low-risk docs/code change".
+5. Orchestrator marks only setup-ready work as `agent-ready`. Product delivery
+   starts after the guide, templates, labels, Project fields, and PR evidence
+   path are present.
+6. If API or repository permissions are missing, Orchestrator returns `Human
+   action required` with exact commands, file patches, issue bodies, labels,
+   Project fields, and UI paths. The block must be executable without asking
+   the human to design the process manually.
+
+The bootstrap is complete only when one pilot issue has passed the full loop:
+
+```text
+GitHub Issue -> Ready Queue -> Worker branch -> Pull Request with Closes #123 -> validation evidence -> Review -> Done
+```
+
 ## Copy/Paste Prompts
 
 ### Brainstorm prompt
@@ -628,6 +719,75 @@ Use this when adopting the workflow in an established repository.
 5. Какие team-specific правила нужно добавить в AGENTS.md и PR template.
 
 Не удаляй существующие правила без явного решения человека.
+```
+
+### Existing Linear project prompt
+
+Use this when adopting the workflow in a repository that already uses Linear.
+
+```text
+Ты Planner Chat. Нужно внедрить GitHub-native agent workflow в проект, который уже работает через Linear.
+
+Сначала сделай Linear workflow audit:
+- Linear teams/projects/statuses/cycles/labels/templates;
+- текущие ready filters, blockers, dependencies и linked PR flow;
+- кто принимает product priority, acceptance, release и QA решения;
+- какие Linear поля обязательны до разработки.
+
+Затем сделай Linear-to-GitHub mapping:
+- Linear issue -> GitHub Issue;
+- Linear status -> GitHub Project Status;
+- Linear label -> GitHub label;
+- Linear dependency/blocker -> GitHub dependency, sub-issue или blocker link;
+- Linear project/cycle -> GitHub Project view, milestone или label;
+- Linear linked PR -> GitHub PR with Closes #<github-issue> and Linear backlink.
+
+Правила:
+1. Не переписывай весь Linear backlog.
+2. Выбери 3-5 Linear issues для pilot.
+3. Для каждой pilot-задачи создай или опиши GitHub Issue с полным Agent task contract.
+4. Linear остается product/backlog source, пока migration partial.
+5. GitHub Issue и GitHub Project становятся execution source для agent delivery.
+6. Orchestrator не запускает Worker напрямую из Linear issue.
+7. Если не хватает доступа, верни Human action required с точными Linear URLs, GitHub issue bodies, labels, Project fields и comments.
+
+Верни GitHub Setup Packet, Linear-to-GitHub mapping, pilot issue list, transitional source of truth и Orchestrator seed packet.
+```
+
+### No-tooling bootstrap prompt
+
+Use this when adopting the workflow in a repository that has no Linear and no
+agent workflow.
+
+```text
+Ты Planner Chat. Нужно внедрить GitHub-native agent workflow в проект, где вообще нет Linear, GitHub Project queue, agent-ready labels или агентного процесса.
+
+Это No-tooling bootstrap. Сначала создается operating system, потом product delivery.
+
+Сначала прочитай:
+- README.md и docs;
+- AGENTS.md если есть;
+- .github templates/workflows если есть;
+- package manager, scripts, tests, build, lint, deploy;
+- branch protection/release expectations, если они описаны;
+- включены ли Issues, Projects, Actions и Pages.
+
+Сделай GitHub Setup Packet:
+- repo_settings: issues/projects/pages/actions;
+- labels: agent-ready, blocked, qa-required, security-review, design-review, docs, automation, github-pages, workflow;
+- project_fields: Status, Work Type, Risk, QA Required;
+- ready_queue: Status = Ready + label:agent-ready + no open blockers;
+- template_files: AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template, readiness audit, Pages workflow if needed;
+- fallback_commands: exact gh/API/UI actions.
+
+Правила:
+1. Первые GitHub Issues создает Orchestrator из Planner handoff.
+2. Human не проектирует issue bodies вручную.
+3. Первые задачи должны быть setup-sized: templates, readiness audit, CI validation, one pilot issue.
+4. Product delivery начинается только после setup verification.
+5. Если доступа нет, верни Human action required с точными командами, patches, issue bodies, labels, Project fields и UI paths.
+
+Верни GitHub Setup Packet, Orchestrator seed packet, first setup issues, validation commands и blocked access list.
 ```
 
 ## 7. Worker Delivery Loop

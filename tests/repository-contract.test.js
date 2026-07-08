@@ -36,6 +36,11 @@ test("workflow guide defines the GitHub-native operating model", () => {
     "GitHub Pages",
     "New project integration",
     "Existing project integration",
+    "Existing project with Linear",
+    "Existing project without agent workflow",
+    "Linear workflow audit",
+    "Linear-to-GitHub mapping",
+    "No-tooling bootstrap",
     "Planner setup prompt",
     "Orchestrator queue prompt",
     "Worker delivery prompt",
@@ -84,6 +89,11 @@ test("site source presents the workflow and GitHub Pages answer", () => {
     "GitHub Pages",
     "New project setup",
     "Existing project integration",
+    "Existing project with Linear",
+    "Existing project without agent workflow",
+    "Linear workflow audit",
+    "Linear-to-GitHub mapping",
+    "No-tooling bootstrap",
     "Copy/paste prompts",
     "Canonical MD template",
     "Full canonical GitHub workflow markdown",
@@ -115,6 +125,27 @@ test("site source presents the workflow and GitHub Pages answer", () => {
 
   for (const phrase of requiredPhrases) {
     assert.match(app, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be visible in App.tsx`);
+  }
+});
+
+test("workflow guide and site document adoption scenarios", () => {
+  const guide = read("docs/github-agent-workflow.md");
+  const app = read("src/App.tsx");
+
+  const scenarioPhrases = [
+    "Existing project with Linear",
+    "Existing project without agent workflow",
+    "Linear workflow audit",
+    "Linear-to-GitHub mapping",
+    "No-tooling bootstrap",
+    "GitHub Setup Packet",
+    "Human action required",
+  ];
+
+  for (const phrase of scenarioPhrases) {
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(guide, new RegExp(escaped), `${phrase} should be documented in the canonical guide`);
+    assert.match(app, new RegExp(escaped), `${phrase} should be visible in the site source`);
   }
 });
 
