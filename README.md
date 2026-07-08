@@ -8,6 +8,11 @@ record.
 It also includes a static GitHub Pages presentation site for sharing the model
 with a team.
 
+The Pages site is intentionally self-contained: a user should be able to open
+the published HTML page, follow the new-project or existing-project setup
+steps, copy the prompts, and configure the GitHub-native workflow without
+needing a separate Linear-style document.
+
 ## Can This Be Published With GitHub Pages?
 
 Yes. GitHub Pages is a good fit for publishing this guide as a static

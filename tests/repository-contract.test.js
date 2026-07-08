@@ -34,6 +34,11 @@ test("workflow guide defines the GitHub-native operating model", () => {
     "GitHub Projects",
     "Closes #",
     "GitHub Pages",
+    "New project integration",
+    "Existing project integration",
+    "Planner setup prompt",
+    "Orchestrator queue prompt",
+    "Worker delivery prompt",
   ];
 
   for (const phrase of requiredPhrases) {
@@ -53,6 +58,12 @@ test("site source presents the workflow and GitHub Pages answer", () => {
     "Issue Forms",
     "GitHub Actions",
     "GitHub Pages",
+    "New project setup",
+    "Existing project integration",
+    "Copy/paste prompts",
+    "Planner setup prompt",
+    "Orchestrator queue prompt",
+    "Worker delivery prompt",
   ];
 
   for (const phrase of requiredPhrases) {

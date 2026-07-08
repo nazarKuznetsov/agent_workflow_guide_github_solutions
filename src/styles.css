@@ -305,6 +305,12 @@ h3 {
   margin-bottom: 36px;
 }
 
+.section-heading p:not(.eyebrow) {
+  color: var(--text-muted);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
 .gate-grid,
 .capability-grid {
   display: grid;
@@ -342,7 +348,10 @@ h3 {
 
 .gate-card p,
 .capability-card p,
-.process p {
+.process p,
+.setup-card p,
+.checklist-panel p,
+.prompt-card p {
   margin: 0;
   color: var(--text-muted);
   line-height: 1.55;
@@ -384,6 +393,83 @@ h3 {
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
   gap: 28px;
   align-items: center;
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.setup-card,
+.checklist-panel,
+.prompt-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.014)),
+    var(--surface);
+}
+
+.setup-card {
+  padding: 22px;
+}
+
+.checklist {
+  display: grid;
+  gap: 28px;
+}
+
+.checklist-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+  gap: 14px;
+}
+
+.checklist-panel {
+  padding: 24px;
+}
+
+.checklist-panel ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.file-list {
+  display: grid;
+  gap: 18px;
+}
+
+.file-list strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.prompt-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.prompt-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
+  gap: 22px;
+  padding: 22px;
+}
+
+.prompt-card pre {
+  padding: 18px;
+  border: 1px solid rgba(53, 242, 163, 0.18);
+  border-radius: var(--radius);
+  background: #070a0d;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .terminal-card {
@@ -432,7 +518,9 @@ pre {
 @media (max-width: 980px) {
   .hero,
   .positioning,
-  .proof {
+  .proof,
+  .checklist-grid,
+  .prompt-card {
     grid-template-columns: 1fr;
   }
 
@@ -454,7 +542,8 @@ pre {
   }
 
   .capability-grid,
-  .gate-grid {
+  .gate-grid,
+  .setup-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -492,7 +581,8 @@ pre {
 
   .hero-lede,
   .positioning p,
-  .pages-answer p {
+  .pages-answer p,
+  .section-heading p:not(.eyebrow) {
     font-size: 1.02rem;
   }
 
@@ -511,7 +601,8 @@ pre {
 
   .status-strip,
   .capability-grid,
-  .gate-grid {
+  .gate-grid,
+  .setup-grid {
     grid-template-columns: 1fr;
   }
 

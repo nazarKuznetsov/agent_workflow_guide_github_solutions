@@ -151,6 +151,155 @@ When a task is prepared:
 
 If a field does not apply, write `none` and explain why.
 
+## New project integration
+
+Use this path when the team is starting from a fresh repository.
+
+1. Create the repository and enable GitHub Issues, Pull Requests, Actions, and
+   Projects.
+2. Copy the workflow files:
+   - `AGENTS.md`;
+   - `docs/github-agent-workflow.md`;
+   - `.github/ISSUE_TEMPLATE/agent-task.yml`;
+   - `.github/ISSUE_TEMPLATE/config.yml`;
+   - `.github/pull_request_template.md`;
+   - `.github/workflows/deploy-pages.yml`;
+   - `.github/workflows/readiness-audit.yml`.
+3. Create the recommended labels:
+   `agent-ready`, `blocked`, `qa-required`, `security-review`,
+   `design-review`, `docs`, `automation`, `github-pages`, `workflow`.
+4. Create a GitHub Project with the fields from the Project Schema section.
+5. Create a `Ready Queue` view with `Status = Ready` and `label:agent-ready`.
+6. In repository Settings -> Pages, set the source to GitHub Actions.
+7. For a Vite project, set `base` to the Pages project path, for example
+   `/agent_workflow_guide_github_solutions/`.
+8. Create the first issue through the Agent task form and fill every readiness
+   section.
+9. Add `agent-ready` and set Project `Status` to `Ready` only after the issue
+   can start without extra decisions.
+
+The first pilot should cover the full loop:
+
+```text
+GitHub Issue -> Ready Queue -> Worker branch -> Pull Request with Closes #123 -> Review -> Done
+```
+
+## Existing project integration
+
+Use this path when the project already has labels, templates, CI, branch
+protection, or a backlog.
+
+1. Audit existing repository rules: `README.md`, `AGENTS.md` if present,
+   `.github/` templates, Actions, labels, Project views, branch protection, and
+   release expectations.
+2. Add the GitHub-native guide without deleting existing local rules.
+3. If a PR template already exists, merge in the evidence sections instead of
+   replacing team-specific security, QA, release, or review requirements.
+4. Map current statuses to the agent queue:
+   `Intake`, `Ready`, `In Progress`, `Review`, `Blocked`, `Done`.
+5. Backfill only a small pilot batch, usually three to five issues.
+6. Convert those issues to the Agent task contract by adding Goal, Acceptance
+   Criteria, Dependency / Blocker State, Validation Expectations, Security
+   Impact, UI / Design Impact, and QA Requirement.
+7. Run one Worker PR through the entire loop before migrating the rest of the
+   backlog.
+8. Record any project-specific exceptions in `AGENTS.md` and the PR template.
+
+Do not mark legacy issues as `agent-ready` merely because they are important.
+They are ready only when the readiness gate is complete.
+
+## Copy/Paste Prompts
+
+### Planner setup prompt
+
+Use this when creating or updating the process in a repository.
+
+```text
+Ты Planner Chat для GitHub-native agent workflow.
+
+Открой репозиторий и используй GitHub как source of truth. Проверь AGENTS.md, docs/github-agent-workflow.md, Issue Forms, PR template, labels, GitHub Project fields, Actions и Pages workflow.
+
+Задача:
+1. Настрой или обнови workflow так, чтобы он работал без Linear.
+2. Проверь, что GitHub Issue является контрактом задачи.
+3. Проверь, что Ready gate = Project Status: Ready + label agent-ready + заполненные readiness sections.
+4. Создай или обнови задачи так, чтобы каждая имела Goal, Acceptance Criteria, Dependency / Blocker State, Validation Expectations, Security Impact, UI / Design Impact и QA Requirement.
+5. Не запускай delivery work.
+
+Верни:
+- какие файлы/настройки изменены;
+- какие labels и Project fields нужны;
+- какие issues готовы к Ready;
+- какие issues blocked и почему;
+- какие решения должен принять человек.
+```
+
+### Orchestrator queue prompt
+
+Use this before starting Worker Chat.
+
+```text
+Ты Orchestrator Chat для GitHub-native agent workflow.
+
+Используй только GitHub state: Issues, Project fields, labels, dependencies/sub-issues, linked PRs, comments, Actions и repository files.
+
+Найди задачи, где:
+- Project Status = Ready;
+- есть label agent-ready;
+- нет открытых blockers;
+- issue body содержит Goal, Acceptance Criteria, Dependency / Blocker State, Validation Expectations, Security Impact, UI / Design Impact и QA Requirement.
+
+Для каждой candidate issue:
+1. Проверь, что задача помещается в один Worker PR.
+2. Проверь, что нет незакрытых зависимостей или неутвержденных решений.
+3. Если задача готова, опиши worker brief.
+4. Если не готова, убери ее из Ready или оставь blocker comment.
+
+Верни одну следующую задачу для Worker Chat и краткий state ledger comment.
+```
+
+### Worker delivery prompt
+
+Use this to deliver exactly one GitHub Issue.
+
+```text
+Ты Worker Chat для GitHub-native agent workflow.
+
+Возьми только GitHub Issue #<номер>. Не расширяй scope.
+
+Перед кодом:
+1. Прочитай issue body, comments, labels, Project fields, blockers, linked PRs, AGENTS.md и релевантные docs.
+2. Подтверди, что Ready gate выполнен: Project Status = Ready + label agent-ready + нет blockers.
+3. Создай одну branch: feat/<issue>-short-slug, fix/<issue>-short-slug или docs/<issue>-short-slug.
+
+Delivery:
+1. Сделай минимальное изменение, которое закрывает acceptance criteria.
+2. Запусти validation из issue и ближайшие дешевые проверки проекта.
+3. Открой один PR с Closes #<номер>.
+4. Заполни PR template evidence: acceptance, validation, security, design, repo/API grounding, risks, rollout.
+
+Не закрывай задачу без validation evidence.
+```
+
+### Existing project migration prompt
+
+Use this when adopting the workflow in an established repository.
+
+```text
+Ты Planner Chat. Нужно внедрить GitHub-native agent workflow в существующий проект без поломки текущего процесса.
+
+Сначала прочитай README, AGENTS.md если есть, .github templates, workflows, current labels, Project views и branch protection expectations.
+
+Сделай migration plan:
+1. Что можно добавить без риска.
+2. Что нужно объединить с текущими шаблонами.
+3. Какие старые labels/statuses мапятся на Intake, Ready, In Progress, Review, Blocked, Done.
+4. Какие 3-5 issues лучше взять для pilot.
+5. Какие team-specific правила нужно добавить в AGENTS.md и PR template.
+
+Не удаляй существующие правила без явного решения человека.
+```
+
 ## 7. Worker Delivery Loop
 
 Worker Chat follows this sequence:
