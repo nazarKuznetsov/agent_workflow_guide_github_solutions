@@ -311,6 +311,10 @@ h3 {
   line-height: 1.6;
 }
 
+.prompt-heading {
+  margin-top: 40px;
+}
+
 .gate-grid,
 .capability-grid {
   display: grid;

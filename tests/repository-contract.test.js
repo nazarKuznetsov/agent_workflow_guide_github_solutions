@@ -4,6 +4,17 @@ import test from "node:test";
 
 const read = (path) => readFileSync(path, "utf8");
 
+const sectionBetween = (source, start, end) => {
+  const startIndex = source.indexOf(start);
+  const endIndex = source.indexOf(end);
+
+  assert.notEqual(startIndex, -1, `${start} section should exist`);
+  assert.notEqual(endIndex, -1, `${end} section should exist`);
+  assert.ok(startIndex < endIndex, `${start} should appear before ${end}`);
+
+  return source.slice(startIndex, endIndex);
+};
+
 test("repository contains the GitHub-native workflow guide and templates", () => {
   const requiredFiles = [
     "AGENTS.md",
@@ -147,6 +158,73 @@ test("workflow guide and site document adoption scenarios", () => {
     assert.match(guide, new RegExp(escaped), `${phrase} should be documented in the canonical guide`);
     assert.match(app, new RegExp(escaped), `${phrase} should be visible in the site source`);
   }
+});
+
+test("workflow guide groups stage prompts under each instruction type", () => {
+  const guide = read("docs/github-agent-workflow.md");
+
+  const promptGroups = [
+    {
+      start: "## New project integration",
+      end: "## Existing project integration",
+      marker: "### New project prompts",
+    },
+    {
+      start: "## Existing project integration",
+      end: "## Existing project with Linear",
+      marker: "### Existing project prompts",
+    },
+    {
+      start: "## Existing project with Linear",
+      end: "## Existing project without agent workflow",
+      marker: "### Linear project prompts",
+    },
+    {
+      start: "## Existing project without agent workflow",
+      end: "## Copy/Paste Prompts",
+      marker: "### No-tooling bootstrap prompts",
+    },
+  ];
+
+  const stageHeadings = [
+    "#### Brainstorm prompt",
+    "#### Planner prompt",
+    "#### Orchestrator prompt",
+    "#### Worker prompt",
+    "#### QA verification prompt",
+  ];
+
+  for (const group of promptGroups) {
+    const section = sectionBetween(guide, group.start, group.end);
+    assert.match(section, new RegExp(group.marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${group.marker} should be inside ${group.start}`);
+
+    for (const heading of stageHeadings) {
+      assert.match(section, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${heading} should be inside ${group.start}`);
+    }
+  }
+});
+
+test("site groups prompt cards by instruction type", () => {
+  const app = read("src/App.tsx");
+
+  const requiredPhrases = [
+    "const instructionTypes",
+    "New project prompts",
+    "Existing project prompts",
+    "Linear project prompts",
+    "No-tooling bootstrap prompts",
+    "Brainstorm prompt",
+    "Planner prompt",
+    "Orchestrator prompt",
+    "Worker prompt",
+    "QA verification prompt",
+  ];
+
+  for (const phrase of requiredPhrases) {
+    assert.match(app, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be present in App.tsx`);
+  }
+
+  assert.doesNotMatch(app, /const prompts: PromptBlock\[\]/, "site should not keep one global prompt list");
 });
 
 test("site embeds the full canonical markdown guide", () => {
