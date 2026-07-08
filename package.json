@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "GitHub-native agent workflow guide and GitHub Pages presentation site.",
+  "description": "GitHub-native agent workflow guide and static presentation site.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

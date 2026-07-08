@@ -5,13 +5,9 @@ delivery workflow. It uses GitHub Issues, GitHub Projects, Issue Forms, labels,
 pull request templates, GitHub Actions, and the GitHub API as the system of
 record.
 
-It also includes a static GitHub Pages presentation site for sharing the model
-with a team.
-
-The Pages site is intentionally self-contained: a user should be able to open
-the published HTML page, follow the new-project or existing-project setup
-steps, copy the prompts, and configure the GitHub-native workflow without
-needing a separate Linear-style document.
+It also includes a static presentation site for sharing the model with a team.
+The published page is a reading and copy surface only; it is not part of the
+agent workflow state model.
 
 The intended operating model matches the Linear guide: the human creates only
 Brainstorm Chat, Planner Chat, and Orchestrator Chat. Orchestrator Chat creates
@@ -35,23 +31,7 @@ gh project field-create <project-number> --owner <owner> --name Status --data-ty
 ```
 
 If Orchestrator lacks permission, it returns `Human action required` with exact
-commands, issue body, labels, Project fields, and Pages action.
-
-## Can This Be Published With GitHub Pages?
-
-Yes. GitHub Pages is a good fit for publishing this guide as a static
-presentation and documentation site. Pages serves the public frontend only:
-HTML, CSS, JavaScript, images, and static assets.
-
-GitHub Pages is not the orchestration backend. The operating workflow still
-lives in GitHub Issues, GitHub Projects, labels, linked pull requests, Actions,
-and API-driven automation.
-
-Expected project URL:
-
-```text
-https://nazarkuznetsov.github.io/agent_workflow_guide_github_solutions/
-```
+commands, issue body, labels, and Project fields.
 
 The Vite base path is configured as:
 
@@ -110,7 +90,6 @@ security-review
 design-review
 docs
 automation
-github-pages
 workflow
 ```
 

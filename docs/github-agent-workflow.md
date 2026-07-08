@@ -5,10 +5,6 @@ operating model. GitHub Issues, GitHub Projects, labels, Issue Forms, pull
 request templates, GitHub Actions, and the GitHub API become the durable source
 of truth.
 
-GitHub Pages can publish this guide as a static presentation site. It should not
-be treated as the orchestration runtime. The real workflow state remains in
-GitHub.
-
 ## 1. System Of Record
 
 Use this mapping when migrating from Linear:
@@ -99,9 +95,8 @@ QA block is verified by Orchestrator.
 Automation carrier: GitHub tools / gh / GitHub API.
 ```
 
-GitHub Pages is not the automation runtime. It is the published instruction and
-copy surface. The execution layer is Orchestrator Chat with GitHub tools, `gh`,
-or GitHub API access.
+This guide is documentation, not the automation runtime. The execution layer is
+Orchestrator Chat with GitHub tools, `gh`, or GitHub API access.
 
 ### Human responsibilities
 
@@ -125,8 +120,7 @@ Orchestrator Chat is responsible for the operational GitHub actions:
 - apply the `GitHub Setup Packet` before creating delivery work;
 - create GitHub Issues from Planner-approved work packets;
 - add labels such as `workflow`, `agent-ready`, `blocked`, `qa-required`,
-  `security-review`, `design-review`, `docs`, `automation`, and
-  `github-pages`;
+  `security-review`, `design-review`, `docs`, and `automation`;
 - add the issue to the GitHub Project and set `Status`, `Work Type`, `Risk`,
   and `QA Required`;
 - write state ledger comments with active workers, blockers, PR links, CI
@@ -265,7 +259,6 @@ github_setup_packet:
   repo_settings:
     issues: enabled
     projects: enabled
-    pages_source: GitHub Actions
   labels:
     - agent-ready
     - blocked
@@ -274,7 +267,6 @@ github_setup_packet:
     - design-review
     - docs
     - automation
-    - github-pages
     - workflow
   project_fields:
     Status: [Intake, Ready, In Progress, Review, Blocked, Done]
@@ -289,7 +281,6 @@ github_setup_packet:
     - .github/ISSUE_TEMPLATE/agent-task.yml
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/pull_request_template.md
-    - .github/workflows/deploy-pages.yml
     - .github/workflows/readiness-audit.yml
   fallback_commands: true
 ```
@@ -320,8 +311,7 @@ setup_report:
     - project fields
   skipped:
     - project view automation when unsupported by current permissions
-  needs_human_action:
-    - exact Settings -> Pages action, only if API/tools cannot set it
+  needs_human_action: []
 ```
 
 `Human action required` must be precise. It must include the blocked setting,
@@ -393,7 +383,6 @@ security-review
 design-review
 docs
 automation
-github-pages
 workflow
 ```
 
@@ -434,7 +423,7 @@ Use this path when the team is starting from a fresh repository.
    `gh project field-create`, or equivalent GitHub API calls.
 7. Orchestrator verifies the workflow files:
    `AGENTS.md`, `docs/github-agent-workflow.md`, Issue Form config, PR
-   template, Pages deploy workflow, and readiness audit workflow.
+   template, and readiness audit workflow.
 8. Orchestrator configures or verifies the Ready Queue:
    `Status = Ready`, `label:agent-ready`, and no open blockers.
 9. Orchestrator creates the first GitHub Issues and Project state from the
@@ -481,7 +470,7 @@ GitHub Issue -> Ready Queue -> Worker branch -> Pull Request with Closes #123 ->
 
 Задача:
 1. Подготовь GitHub Setup Packet: repo_settings, labels, project_fields,
-   ready_queue, pages, template_files, fallback_commands.
+   ready_queue, template_files, fallback_commands.
 2. Подготовь Orchestrator seed packet.
 3. Определи первые setup-sized GitHub Issues, которые Orchestrator создаст
    через GitHub tools / gh / GitHub API.
@@ -510,7 +499,7 @@ list и решения, которые должен принять челове�
 4. Добавь labels, GitHub Project fields, blockers и Ready Queue state.
 5. Создай task-scoped Worker packet только для ready issues.
 6. Если доступа не хватает, верни Human action required с точными командами,
-   issue bodies, labels, Project fields и Pages action.
+   issue bodies, labels и Project fields.
 ```
 
 #### Worker prompt
@@ -844,11 +833,11 @@ system itself, not product delivery.
      CI, deploy flow, release constraints, branch protection expectations, and
      review norms;
    - current `.github/` templates and workflows, if any;
-   - whether Issues, Projects, Actions, and Pages are enabled;
+   - whether Issues, Projects, and Actions are enabled;
    - validation commands that a Worker can actually run locally.
 2. Planner Chat generates a `GitHub Setup Packet` that includes repo settings,
    labels, GitHub Project fields, Ready Queue rule, Issue Form, PR evidence
-   template, readiness audit, Pages setup if relevant, and fallback commands.
+   template, readiness audit, and fallback commands.
 3. Orchestrator applies GitHub setup through GitHub tools / `gh` / GitHub API:
    `gh repo edit --enable-issues --enable-projects`, `gh label create`,
    `gh project field-create`, template-file patches, and setup verification.
@@ -903,13 +892,13 @@ workflows, package manager, scripts, tests, build, lint, deploy и branch
 protection/release expectations.
 
 Сделай GitHub Setup Packet:
-- repo_settings: issues/projects/pages/actions;
+- repo_settings: issues/projects/actions;
 - labels: agent-ready, blocked, qa-required, security-review, design-review,
-  docs, automation, github-pages, workflow;
+  docs, automation, workflow;
 - project_fields: Status, Work Type, Risk, QA Required;
 - ready_queue: Status = Ready + label:agent-ready + no open blockers;
 - template_files: AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR
-  template, readiness audit, Pages workflow if needed;
+  template, readiness audit;
 - fallback_commands: exact gh/API/UI actions.
 
 Верни Orchestrator seed packet, first setup issues, validation commands и
@@ -925,7 +914,7 @@ blocked access list.
 и GitHub tools / gh / GitHub API.
 
 Задача:
-1. Проверь repo access, Issues, Projects, Actions и Pages state.
+1. Проверь repo access, Issues, Projects и Actions state.
 2. Примени GitHub Setup Packet.
 3. Создай первые setup-sized GitHub Issues из Planner handoff.
 4. Добавь labels, Project fields, blockers и Ready Queue state.
@@ -1077,19 +1066,11 @@ Every worker PR must include:
 - risks;
 - migration or rollout notes.
 
-If the PR changes the GitHub Pages site, it must also confirm:
-
-- Vite `base` still matches `/agent_workflow_guide_github_solutions/`;
-- content remains readable without WebGL;
-- mobile fallback works;
-- no frontend secrets were added.
-
 ## 9. Automation Stack
 
 Use automation only where it protects the workflow:
 
 - GitHub built-in project automations for status transitions;
-- GitHub Actions for Pages deployment;
 - readiness audit workflow when `agent-ready` is applied;
 - `gh` or GitHub API for queue inspection and reporting;
 - issue comments for state ledger updates when Project history is not enough.
@@ -1113,27 +1094,13 @@ record.
   for auth, permissions, tokens, PII, file handling, webhooks, external
   integrations, and public exposure.
 - UI work must include states, responsive behavior, accessible contrast, and
-  GitHub Pages/WebGL fallback checks.
+  reduced-motion or non-WebGL fallback checks when applicable.
 - Documentation changes should update durable workflow context without
   duplicating implementation details.
 - Versioning, release tags, and deployment changes require an explicit GitHub
   Issue or human approval.
 
-## 11. GitHub Pages Presentation
-
-The Pages site presents this model to a team. It should answer:
-
-- what replaces Linear;
-- how Planner, Orchestrator, and Worker chats divide responsibility;
-- what makes a task ready;
-- how blockers and PR links are represented;
-- how GitHub Actions and API automation fit in;
-- why GitHub Pages is only the publication layer.
-
-GitHub Pages is safe for this use case because the site is static. Do not place
-private tokens, secret API keys, or orchestration state in frontend code.
-
-## 12. Process Improvement
+## 11. Process Improvement
 
 Process Improvement belongs to Planner Chat. Orchestrator and Worker can create
 notes, but they do not rewrite canonical workflow rules during delivery.
@@ -1147,7 +1114,7 @@ Create a Process Improvement note when:
 - TDD RED/GREEN evidence is weak or skipped without a valid exemption;
 - QA subagents repeatedly find the same class of regression;
 - GitHub Project state, labels, or PR template fields create noisy history;
-- GitHub Pages deployment constraints are unclear.
+- deployment or release constraints are unclear.
 
 Use this template in a GitHub Issue or Planner handoff:
 
@@ -1155,22 +1122,20 @@ Use this template in a GitHub Issue or Planner handoff:
 ## Process Improvement
 
 Observed issue:
-Affected surface: Planner / Orchestrator / Worker / GitHub Project / templates / Pages
+Affected surface: Planner / Orchestrator / Worker / GitHub Project / templates / release
 Evidence:
 Recommended rule or template change:
 Risk if unchanged:
 Who should decide:
 ```
 
-## 13. Done Definition
+## 12. Done Definition
 
 A workflow change is done when:
 
 - docs explain the behavior;
 - templates encode the behavior;
-- the Pages presentation reflects the behavior;
 - local tests and build pass;
-- GitHub Pages deployment path is correct;
 - no backend-only assumptions were introduced.
 
 A delivery issue is done when:

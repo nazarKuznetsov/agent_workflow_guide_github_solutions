@@ -42,7 +42,7 @@ const capabilities: Card[] = [
   },
   {
     title: "GitHub Actions as guardrails",
-    copy: "Pages deployment and readiness audit workflows protect the system without turning the static site into a backend.",
+    copy: "Readiness audit workflows protect the queue without replacing Orchestrator judgment.",
   },
   {
     title: "PR evidence as the handoff",
@@ -58,7 +58,7 @@ const flow = [
     "Run heartbeat every 20-30 minutes, inspect blockers, call Model Router, and start one worker per issue.",
   ],
   ["03", "Worker", "Use TDD RED/GREEN, grounding, QA subagents, and one evidence-rich pull request."],
-  ["04", "GitHub Pages", "Publish the operating model as a static presentation, not as orchestration state."],
+  ["04", "Review", "Verify PR evidence, QA findings, checks, blockers, and Done state before closing the issue."],
 ];
 
 const controlPlane: Step[] = [
@@ -83,8 +83,8 @@ const controlPlane: Step[] = [
     copy: "Worker прикладывает QA evidence к completion report, а Orchestrator проверяет его перед переводом GitHub Project Status в Review или Done.",
   },
   {
-    title: "GitHub Pages is instruction only",
-    copy: "Pages публикует правила и snippets, но не хранит секреты, не вызывает API и не заменяет Orchestrator runtime.",
+    title: "Documentation is instruction only",
+    copy: "Guide и snippets не хранят секреты, не вызывают API и не заменяют Orchestrator runtime.",
   },
 ];
 
@@ -122,7 +122,7 @@ const newProjectSteps: Step[] = [
   },
   {
     title: "2. Вставь идею и canonical md в Planner",
-    copy: "Planner возвращает planner_yaml, canonical_md, orchestrator_prompt и GitHub Setup Packet: repo settings, labels, Project schema, Pages, template checks и fallback commands.",
+    copy: "Planner возвращает planner_yaml, canonical_md, orchestrator_prompt и GitHub Setup Packet: repo settings, labels, Project schema, template checks и fallback commands.",
   },
   {
     title: "3. Передай packet в Orchestrator",
@@ -130,7 +130,7 @@ const newProjectSteps: Step[] = [
   },
   {
     title: "4. Orchestrator проверяет repo files",
-    copy: "Он проверяет AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template, Pages workflow и readiness audit. Если файлов нет, возвращает patch или запускает Worker на docs/setup task.",
+    copy: "Он проверяет AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template и readiness audit. Если файлов нет, возвращает patch или запускает Worker на docs/setup task.",
   },
   {
     title: "5. Orchestrator создает первые GitHub Issues",
@@ -138,7 +138,7 @@ const newProjectSteps: Step[] = [
   },
   {
     title: "6. Manual path только как fallback",
-    copy: "Если прав не хватает, Orchestrator возвращает Human action required с готовыми gh commands, issue body, labels, Project fields и Pages action.",
+    copy: "Если прав не хватает, Orchestrator возвращает Human action required с готовыми gh commands, issue body, labels и Project fields.",
   },
 ];
 
@@ -199,11 +199,11 @@ const existingLinearProjectSteps: Step[] = [
 const noToolingProjectSteps: Step[] = [
   {
     title: "1. No-tooling bootstrap audit",
-    copy: "Проверь README, docs, scripts, tests, CI, deploy, branch protection expectations, .github templates и включены ли Issues, Projects, Actions и Pages.",
+    copy: "Проверь README, docs, scripts, tests, CI, deploy, branch protection expectations, .github templates и включены ли Issues, Projects и Actions.",
   },
   {
     title: "2. Planner writes GitHub Setup Packet",
-    copy: "Packet должен описывать repo settings, labels, Project fields, Ready Queue, Issue Form, PR template, readiness audit, Pages setup и fallback commands.",
+    copy: "Packet должен описывать repo settings, labels, Project fields, Ready Queue, Issue Form, PR template, readiness audit и fallback commands.",
   },
   {
     title: "3. Orchestrator applies setup",
@@ -224,15 +224,15 @@ const noToolingProjectSteps: Step[] = [
 ];
 
 const setupPacketChecklist = [
-  "Planner returns GitHub Setup Packet with repo_settings, labels, project_fields, pages, template_files, ready_queue, fallback_commands.",
+  "Planner returns GitHub Setup Packet with repo_settings, labels, project_fields, template_files, ready_queue, fallback_commands.",
   "Orchestrator applies GitHub setup after gh auth status or equivalent GitHub tool/API access check.",
   "Repo settings command: gh repo edit --enable-issues --enable-projects.",
   "Label command pattern: gh label create <name> --color <hex> --description <text> --force.",
   "Project field command pattern: gh project field-create <number> --owner <owner> --name <field> --data-type SINGLE_SELECT --single-select-options <options>.",
-  "Template checks confirm Issue Form, config.yml, PR template, Pages deploy workflow, readiness audit workflow, AGENTS.md, and guide docs.",
+  "Template checks confirm Issue Form, config.yml, PR template, readiness audit workflow, AGENTS.md, and guide docs.",
   "Ready Queue rule stays Status = Ready + label:agent-ready + no open blockers.",
   "Manual GitHub setup is fallback only when Orchestrator lacks permissions.",
-  "Human action required must include exact commands, issue body, labels, Project fields, and Pages action.",
+  "Human action required must include exact commands, issue body, labels, and Project fields.",
   "Worker PR rule remains one issue, one branch, one PR, linked with Closes #123.",
 ];
 
@@ -252,7 +252,7 @@ gh project field-create <project-number> --owner <owner> --name "QA Required" --
 const templateFiles: Card[] = [
   {
     title: "AGENTS.md",
-    copy: "Project-specific rules for Planner, Orchestrator, Worker, readiness gate, branch naming, PR evidence, Pages limits, and validation.",
+    copy: "Project-specific rules for Planner, Orchestrator, Worker, readiness gate, branch naming, PR evidence, and validation.",
   },
   {
     title: "agent-task.yml",
@@ -291,7 +291,7 @@ const promptTemplates: PromptBlock[] = [
     copy: "Используй один раз при создании или обновлении процесса в репозитории.",
     prompt: `Ты Planner Chat для GitHub-native agent workflow.
 
-Открой репозиторий и используй GitHub как source of truth. Проверь AGENTS.md, docs/github-agent-workflow.md, Issue Forms, PR template, labels, GitHub Project fields, Actions и Pages workflow.
+Открой репозиторий и используй GitHub как source of truth. Проверь AGENTS.md, docs/github-agent-workflow.md, Issue Forms, PR template, labels, GitHub Project fields и Actions.
 
 Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.
 
@@ -299,7 +299,7 @@ Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.
 1. Настрой или обнови workflow так, чтобы он работал без Linear.
 2. Проверь, что GitHub Issue является контрактом задачи.
 3. Подготовь Orchestrator seed packet, чтобы Orchestrator creates GitHub Issues через GitHub tools / gh / GitHub API.
-4. Подготовь GitHub Setup Packet: repo_settings, labels, project_fields, ready_queue, pages, template_files, fallback_commands.
+4. Подготовь GitHub Setup Packet: repo_settings, labels, project_fields, ready_queue, template_files, fallback_commands.
 5. Не создавай Worker Chats и не выполняй delivery work.
 
 Верни:
@@ -324,7 +324,7 @@ Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.
 - repo and project configuration.
 
 Твоя задача:
-1. Orchestrator applies GitHub setup: проверь gh auth status, затем примени repo settings, labels, Project fields, Pages checks и template checks из packet.
+1. Orchestrator applies GitHub setup: проверь gh auth status, затем примени repo settings, labels, Project fields и template checks из packet.
 2. Используй gh repo edit --enable-issues --enable-projects для repo settings, gh label create --force для labels и gh project field-create для Project fields, если доступны права.
 3. Создать или обновить GitHub Issues через GitHub tools / gh / GitHub API.
 4. Добавить labels и GitHub Project fields.
@@ -344,7 +344,7 @@ Ready gate:
 - issue body содержит Goal, Acceptance Criteria, Dependency / Blocker State, Validation Expectations, Security Impact, UI / Design Impact и QA Requirement.
 - issue body содержит Model Router, Graphify or fallback repository tracing, TDD RED/GREEN, QA subagents и Primary signal.
 
-Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields, Pages action и gh commands.
+Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields и gh commands.
 
 Не выполняй production code. Не делай delivery сам.
 
@@ -450,14 +450,14 @@ QA evidence:
 - .github templates/workflows если есть;
 - package manager, scripts, tests, build, lint, deploy;
 - branch protection/release expectations, если они описаны;
-- включены ли Issues, Projects, Actions и Pages.
+- включены ли Issues, Projects и Actions.
 
 Сделай GitHub Setup Packet:
-- repo_settings: issues/projects/pages/actions;
-- labels: agent-ready, blocked, qa-required, security-review, design-review, docs, automation, github-pages, workflow;
+- repo_settings: issues/projects/actions;
+- labels: agent-ready, blocked, qa-required, security-review, design-review, docs, automation, workflow;
 - project_fields: Status, Work Type, Risk, QA Required;
 - ready_queue: Status = Ready + label:agent-ready + no open blockers;
-- template_files: AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template, readiness audit, Pages workflow if needed;
+- template_files: AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template, readiness audit;
 - fallback_commands: exact gh/API/UI actions.
 
 Правила:
@@ -627,11 +627,11 @@ function App() {
 
       <section className="hero section-band" id="top">
         <div className="hero-copy">
-          <p className="eyebrow">GitHub-native agent workflow / GitHub Pages ready</p>
+          <p className="eyebrow">GitHub-native agent workflow / agent-ready queue</p>
           <h1>GitHub-native agent workflow</h1>
           <p className="hero-lede">
             A presentable operating guide for replacing a Linear-centered agent queue with GitHub Issues,
-            GitHub Projects, Issue Forms, labels, PR templates, GitHub Actions, API automation, and GitHub Pages.
+            GitHub Projects, Issue Forms, labels, PR templates, GitHub Actions, and API automation.
           </p>
           <div className="hero-actions">
             <a className="button primary" href="#automation">
@@ -651,8 +651,8 @@ function App() {
               <dd>GitHub Projects</dd>
             </div>
             <div>
-              <dt>Publish</dt>
-              <dd>GitHub Pages</dd>
+              <dt>Evidence</dt>
+              <dd>Pull Requests</dd>
             </div>
           </dl>
         </div>
@@ -673,7 +673,7 @@ function App() {
           <p className="eyebrow">Linear-like GitHub automation</p>
           <h2>Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.</h2>
           <p>
-            GitHub Pages is the instruction layer. The runtime automation lives in Orchestrator Chat, which uses
+            The guide is the instruction layer. The runtime automation lives in Orchestrator Chat, which uses
             GitHub tools / gh / GitHub API to create issues, project state, worker packets, and review gates.
           </p>
         </div>
@@ -782,12 +782,12 @@ Status = Ready
 label:agent-ready
 no open blockers`}</pre>
         </div>
-        <div className="pages-answer">
-          <p className="eyebrow">GitHub Pages answer</p>
-          <h2>Yes, publish the instruction on GitHub Pages.</h2>
+        <div className="workflow-answer">
+          <p className="eyebrow">Runtime boundary</p>
+          <h2>GitHub state is the workflow runtime.</h2>
           <p>
-            GitHub Pages can host this presentation because it is static. It should not store secrets, run private
-            orchestration, or replace the GitHub Issue and Project state model.
+            The operating workflow lives in Issues, Projects, labels, linked PRs, Actions, and API-driven automation.
+            Documentation explains the system; it does not replace that state model.
           </p>
         </div>
       </section>
@@ -891,8 +891,8 @@ no open blockers`}</pre>
             <h3>Fallback rule</h3>
             <p>
               Manual GitHub setup is fallback. If Orchestrator cannot mutate the repository or Project, it returns
-              Human action required with exact `gh` commands, issue body, labels, Project fields, Pages source action,
-              and the reason automation was blocked.
+              Human action required with exact `gh` commands, issue body, labels, Project fields, and the reason
+              automation was blocked.
             </p>
           </div>
         </div>
@@ -926,7 +926,7 @@ no open blockers`}</pre>
       </section>
 
       <footer className="site-footer">
-        <span>Static-first. GitHub-native. Pages-safe.</span>
+        <span>Static-first. GitHub-native. Review-ready.</span>
         <a href="https://github.com/nazarKuznetsov/agent_workflow_guide_github_solutions">Repository</a>
       </footer>
     </main>

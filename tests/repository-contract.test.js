@@ -44,7 +44,6 @@ test("workflow guide defines the GitHub-native operating model", () => {
     "GitHub Issue",
     "GitHub Projects",
     "Closes #",
-    "GitHub Pages",
     "New project integration",
     "Existing project integration",
     "Existing project with Linear",
@@ -86,7 +85,7 @@ test("workflow guide defines the GitHub-native operating model", () => {
   }
 });
 
-test("site source presents the workflow and GitHub Pages answer", () => {
+test("site source presents the workflow without a GitHub Pages workflow block", () => {
   const app = read("src/App.tsx");
 
   const requiredPhrases = [
@@ -97,7 +96,6 @@ test("site source presents the workflow and GitHub Pages answer", () => {
     "Worker",
     "Issue Forms",
     "GitHub Actions",
-    "GitHub Pages",
     "New project setup",
     "Existing project integration",
     "Existing project with Linear",
@@ -136,6 +134,48 @@ test("site source presents the workflow and GitHub Pages answer", () => {
 
   for (const phrase of requiredPhrases) {
     assert.match(app, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should be visible in App.tsx`);
+  }
+});
+
+test("canonical workflow does not include GitHub Pages as an adoption step", () => {
+  const guide = read("docs/github-agent-workflow.md");
+  const app = read("src/App.tsx");
+
+  const guideForbiddenPhrases = [
+    "GitHub Pages can publish this guide",
+    "GitHub Pages is not the automation runtime",
+    "GitHub Pages Presentation",
+    "pages_source",
+    "github-pages",
+    ".github/workflows/deploy-pages.yml",
+    "Pages deploy workflow",
+    "Pages action",
+    "Pages setup",
+    "Pages state",
+    "GitHub Pages/WebGL fallback checks",
+    "Pages presentation",
+    "Pages deployment path",
+  ];
+
+  const appForbiddenPhrases = [
+    "GitHub Pages ready",
+    "GitHub Pages answer",
+    "Yes, publish the instruction on GitHub Pages",
+    "GitHub Pages can host this presentation",
+    "GitHub Pages is instruction only",
+    "Pages deployment",
+    "Pages workflow",
+    "Pages action",
+    "Pages setup",
+    "Pages-safe",
+  ];
+
+  for (const phrase of guideForbiddenPhrases) {
+    assert.doesNotMatch(guide, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should not be in the canonical workflow`);
+  }
+
+  for (const phrase of appForbiddenPhrases) {
+    assert.doesNotMatch(app, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${phrase} should not be in the public workflow UI`);
   }
 });
 
