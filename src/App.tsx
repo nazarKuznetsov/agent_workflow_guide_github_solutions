@@ -74,28 +74,28 @@ const controlPlane: Step[] = [
 
 const newProjectSteps: Step[] = [
   {
-    title: "1. Создай репозиторий и включи GitHub Issues",
-    copy: "Создай новый репозиторий, включи Issues, Pull Requests, Actions и Projects. Если это Pages-инструкция, сразу проверь, что репозиторий публичный или что у аккаунта есть Pages для private repo.",
+    title: "1. Создай repo и дай Orchestrator GitHub access",
+    copy: "Human action на старте минимальный: нужен репозиторий и авторизованный Orchestrator с GitHub tools / gh / GitHub API. Дальше setup делает Orchestrator.",
   },
   {
-    title: "2. Скопируй workflow-файлы",
-    copy: "Добавь AGENTS.md, docs/github-agent-workflow.md, .github/ISSUE_TEMPLATE/agent-task.yml, .github/ISSUE_TEMPLATE/config.yml, .github/pull_request_template.md, .github/workflows/deploy-pages.yml и .github/workflows/readiness-audit.yml.",
+    title: "2. Вставь идею и canonical md в Planner",
+    copy: "Planner возвращает planner_yaml, canonical_md, orchestrator_prompt и GitHub Setup Packet: repo settings, labels, Project schema, Pages, template checks и fallback commands.",
   },
   {
-    title: "3. Заведи labels и GitHub Project",
-    copy: "Создай labels из чеклиста ниже. Затем создай GitHub Project с полями Status, Work Type, Risk и QA Required. Ready Queue должен показывать только Status = Ready и label:agent-ready.",
+    title: "3. Передай packet в Orchestrator",
+    copy: "Orchestrator applies GitHub setup: проверяет gh auth status, включает Issues/Projects, создает labels, Project fields, Ready Queue rules и state ledger.",
   },
   {
-    title: "4. Настрой GitHub Pages",
-    copy: "В Settings -> Pages выбери Source = GitHub Actions. Для Vite-проекта оставь base равным /agent_workflow_guide_github_solutions/ или замени на /repo-name/ в целевом репозитории.",
+    title: "4. Orchestrator проверяет repo files",
+    copy: "Он проверяет AGENTS.md, docs/github-agent-workflow.md, Issue Form, PR template, Pages workflow и readiness audit. Если файлов нет, возвращает patch или запускает Worker на docs/setup task.",
   },
   {
-    title: "5. Создай только три управляющих чата",
-    copy: "Открой Brainstorm Chat, Planner Chat и Orchestrator Chat. Дальше Orchestrator сам создает первую GitHub Issue и Project state через GitHub tools / gh / GitHub API.",
+    title: "5. Orchestrator создает первые GitHub Issues",
+    copy: "После setup он создает задачи из Planner handoff, добавляет Project state, blockers, labels и генерирует Worker packets. Человек не создает delivery issues вручную.",
   },
   {
-    title: "6. Используй Issue Form только как fallback",
-    copy: "Если Orchestrator не имеет GitHub-доступа, он возвращает Human action required с готовым issue body, labels, Project fields и gh command.",
+    title: "6. Manual path только как fallback",
+    copy: "Если прав не хватает, Orchestrator возвращает Human action required с готовыми gh commands, issue body, labels, Project fields и Pages action.",
   },
 ];
 
@@ -126,19 +126,31 @@ const existingProjectSteps: Step[] = [
   },
 ];
 
-const setupChecklist = [
-  "Issues enabled; blank issues disabled through .github/ISSUE_TEMPLATE/config.yml",
-  "Project Status: Intake, Ready, In Progress, Review, Blocked, Done",
-  "Project Work Type: Guide, Template, Automation, Site, Docs",
-  "Project Risk: Low, Medium, High",
-  "Project QA Required: Yes, No",
-  "Labels: agent-ready, blocked, qa-required, security-review, design-review, docs, automation, github-pages, workflow",
-  "Ready Queue view: Status = Ready + label:agent-ready + no open blockers",
-  "Orchestrator creates GitHub Issues through GitHub tools / gh / GitHub API",
-  "Issue Form is fallback when Orchestrator lacks GitHub access",
-  "Pages source: GitHub Actions; Vite base: /agent_workflow_guide_github_solutions/ or /target-repo-name/",
-  "Worker PR rule: one issue, one branch, one PR, linked with Closes #123",
+const setupPacketChecklist = [
+  "Planner returns GitHub Setup Packet with repo_settings, labels, project_fields, pages, template_files, ready_queue, fallback_commands.",
+  "Orchestrator applies GitHub setup after gh auth status or equivalent GitHub tool/API access check.",
+  "Repo settings command: gh repo edit --enable-issues --enable-projects.",
+  "Label command pattern: gh label create <name> --color <hex> --description <text> --force.",
+  "Project field command pattern: gh project field-create <number> --owner <owner> --name <field> --data-type SINGLE_SELECT --single-select-options <options>.",
+  "Template checks confirm Issue Form, config.yml, PR template, Pages deploy workflow, readiness audit workflow, AGENTS.md, and guide docs.",
+  "Ready Queue rule stays Status = Ready + label:agent-ready + no open blockers.",
+  "Manual GitHub setup is fallback only when Orchestrator lacks permissions.",
+  "Human action required must include exact commands, issue body, labels, Project fields, and Pages action.",
+  "Worker PR rule remains one issue, one branch, one PR, linked with Closes #123.",
 ];
+
+const setupCommands = `# Orchestrator applies GitHub setup
+gh auth status
+gh repo edit --enable-issues --enable-projects
+
+gh label create agent-ready --color 35f2a3 --description "Ready for agent worker" --force
+gh label create blocked --color ff6d91 --description "Blocked by dependency or decision" --force
+gh label create qa-required --color ffc86b --description "Requires QA evidence before Done" --force
+
+gh project field-create <project-number> --owner <owner> --name Status --data-type SINGLE_SELECT --single-select-options "Intake,Ready,In Progress,Review,Blocked,Done"
+gh project field-create <project-number> --owner <owner> --name "Work Type" --data-type SINGLE_SELECT --single-select-options "Guide,Template,Automation,Site,Docs"
+gh project field-create <project-number> --owner <owner> --name Risk --data-type SINGLE_SELECT --single-select-options "Low,Medium,High"
+gh project field-create <project-number> --owner <owner> --name "QA Required" --data-type SINGLE_SELECT --single-select-options "Yes,No"`;
 
 const templateFiles: Card[] = [
   {
@@ -190,12 +202,12 @@ Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.
 1. Настрой или обнови workflow так, чтобы он работал без Linear.
 2. Проверь, что GitHub Issue является контрактом задачи.
 3. Подготовь Orchestrator seed packet, чтобы Orchestrator creates GitHub Issues через GitHub tools / gh / GitHub API.
-4. Опиши labels, Project fields, readiness gate и fallback Issue Form path.
+4. Подготовь GitHub Setup Packet: repo_settings, labels, project_fields, ready_queue, pages, template_files, fallback_commands.
 5. Не создавай Worker Chats и не выполняй delivery work.
 
 Верни:
 - какие файлы/настройки изменены;
-- какие labels и Project fields нужны;
+- GitHub Setup Packet с командами gh repo edit --enable-issues --enable-projects, gh label create и gh project field-create;
 - Orchestrator seed packet;
 - какие future issues можно создать автоматически;
 - какие work items blocked и почему;
@@ -211,15 +223,18 @@ Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.
 Вход:
 - canonical GitHub workflow;
 - Planner handoff / seed packet;
+- GitHub Setup Packet;
 - repo and project configuration.
 
 Твоя задача:
-1. Создать или обновить GitHub Issues через GitHub tools / gh / GitHub API.
-2. Добавить labels и GitHub Project fields.
-3. Построить dependency graph по blockers/sub-issues/linked PRs.
-4. Применить readiness gate.
-5. Сгенерировать task-scoped Worker packet.
-6. Проверить QA block перед переводом в Review или Done.
+1. Orchestrator applies GitHub setup: проверь gh auth status, затем примени repo settings, labels, Project fields, Pages checks и template checks из packet.
+2. Используй gh repo edit --enable-issues --enable-projects для repo settings, gh label create --force для labels и gh project field-create для Project fields, если доступны права.
+3. Создать или обновить GitHub Issues через GitHub tools / gh / GitHub API.
+4. Добавить labels и GitHub Project fields.
+5. Построить dependency graph по blockers/sub-issues/linked PRs.
+6. Применить readiness gate.
+7. Сгенерировать task-scoped Worker packet.
+8. Проверить QA block перед переводом в Review или Done.
 
 Ready gate:
 - Project Status = Ready;
@@ -227,11 +242,11 @@ Ready gate:
 - нет открытых blockers;
 - issue body содержит Goal, Acceptance Criteria, Dependency / Blocker State, Validation Expectations, Security Impact, UI / Design Impact и QA Requirement.
 
-Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields и gh command.
+Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields, Pages action и gh commands.
 
 Не выполняй production code. Не делай delivery сам.
 
-Верни created/updated issue URLs, Project state, Worker packet и краткий state ledger comment.`,
+Верни setup_report, created/updated issue URLs, Project state, Worker packet и краткий state ledger comment.`,
   },
   {
     title: "Worker delivery prompt",
@@ -520,20 +535,30 @@ no open blockers`}</pre>
 
       <section className="checklist section-band">
         <div className="section-heading">
-          <p className="eyebrow">Manual GitHub setup</p>
-          <h2>Что нужно настроить руками в GitHub.</h2>
+          <p className="eyebrow">Automated GitHub setup</p>
+          <h2>GitHub Setup Packet: Planner пишет, Orchestrator применяет.</h2>
+          <p>
+            В нормальном потоке человек не создает labels, Project fields и delivery issues руками. Planner генерирует
+            packet, Orchestrator applies GitHub setup, а ручной блок появляется только как Human action required.
+          </p>
         </div>
         <div className="checklist-grid">
           <div className="checklist-panel">
-            <h3>Required settings</h3>
+            <h3>Automated setup contract</h3>
             <ul>
-              {setupChecklist.map((item) => (
+              {setupPacketChecklist.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
           <div className="checklist-panel">
-            <h3>Files to copy</h3>
+            <h3>Orchestrator command surface</h3>
+            <pre>{setupCommands}</pre>
+          </div>
+        </div>
+        <div className="checklist-grid">
+          <div className="checklist-panel">
+            <h3>Files Orchestrator verifies</h3>
             <div className="file-list">
               {templateFiles.map((file) => (
                 <div key={file.title}>
@@ -542,6 +567,14 @@ no open blockers`}</pre>
                 </div>
               ))}
             </div>
+          </div>
+          <div className="checklist-panel">
+            <h3>Fallback rule</h3>
+            <p>
+              Manual GitHub setup is fallback. If Orchestrator cannot mutate the repository or Project, it returns
+              Human action required with exact `gh` commands, issue body, labels, Project fields, Pages source action,
+              and the reason automation was blocked.
+            </p>
           </div>
         </div>
       </section>

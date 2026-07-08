@@ -19,6 +19,24 @@ GitHub Issues, labels, Project fields, worker packets, and state ledger updates
 through GitHub tools, `gh`, or the GitHub API. The Issue Form is a fallback when
 automation access is missing.
 
+## Automation-First Setup
+
+Manual GitHub setup is a fallback, not the default path. Planner Chat should
+return a `GitHub Setup Packet`; Orchestrator Chat applies it through GitHub
+tools, `gh`, or the GitHub API.
+
+Core commands or equivalent API calls:
+
+```bash
+gh auth status
+gh repo edit --enable-issues --enable-projects
+gh label create agent-ready --color 35f2a3 --description "Ready for agent worker" --force
+gh project field-create <project-number> --owner <owner> --name Status --data-type SINGLE_SELECT --single-select-options "Intake,Ready,In Progress,Review,Blocked,Done"
+```
+
+If Orchestrator lacks permission, it returns `Human action required` with exact
+commands, issue body, labels, Project fields, and Pages action.
+
 ## Can This Be Published With GitHub Pages?
 
 Yes. GitHub Pages is a good fit for publishing this guide as a static
@@ -64,7 +82,8 @@ npm run preview
 
 ## GitHub Project Schema
 
-Create a GitHub Project and add these fields:
+Planner includes these fields in the `GitHub Setup Packet`, and Orchestrator
+creates or verifies them in GitHub Projects:
 
 ```text
 Status: Intake, Ready, In Progress, Review, Blocked, Done

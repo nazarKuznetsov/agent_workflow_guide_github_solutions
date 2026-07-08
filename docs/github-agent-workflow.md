@@ -38,6 +38,7 @@ Planner Chat owns the operating system:
 - maintains Issue Forms, PR templates, labels, and Project schema;
 - defines readiness and acceptance standards;
 - splits large initiatives into issue-sized work;
+- returns a `GitHub Setup Packet` for repository setup automation;
 - decides when GitHub-native automation should be added.
 
 Planner Chat does not silently execute delivery work. It prepares the queue so
@@ -108,6 +109,7 @@ issue body, labels, project fields, and command to run.
 
 Orchestrator Chat is responsible for the operational GitHub actions:
 
+- apply the `GitHub Setup Packet` before creating delivery work;
 - create GitHub Issues from Planner-approved work packets;
 - add labels such as `workflow`, `agent-ready`, `blocked`, `qa-required`,
   `security-review`, `design-review`, `docs`, `automation`, and
@@ -124,6 +126,84 @@ Orchestrator Chat is responsible for the operational GitHub actions:
 This is the closest GitHub-native equivalent to the Linear flow: GitHub Issues
 replace Linear issues, GitHub Projects replace Linear status views, and
 Orchestrator Chat performs the issue/project mutations through GitHub tools.
+
+## Automated GitHub Setup Packet
+
+Manual GitHub setup is fallback. In the normal flow, Planner Chat generates a
+`GitHub Setup Packet`, and Orchestrator applies GitHub setup through GitHub
+tools, `gh`, or the GitHub API. The human only provides repository access and
+creates the Brainstorm, Planner, and Orchestrator chats.
+
+Planner returns the setup packet in this shape:
+
+```yaml
+github_setup_packet:
+  repo_settings:
+    issues: enabled
+    projects: enabled
+    pages_source: GitHub Actions
+  labels:
+    - agent-ready
+    - blocked
+    - qa-required
+    - security-review
+    - design-review
+    - docs
+    - automation
+    - github-pages
+    - workflow
+  project_fields:
+    Status: [Intake, Ready, In Progress, Review, Blocked, Done]
+    Work Type: [Guide, Template, Automation, Site, Docs]
+    Risk: [Low, Medium, High]
+    QA Required: [Yes, No]
+  ready_queue:
+    filter: "Status = Ready + label:agent-ready + no open blockers"
+  template_files:
+    - AGENTS.md
+    - docs/github-agent-workflow.md
+    - .github/ISSUE_TEMPLATE/agent-task.yml
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/pull_request_template.md
+    - .github/workflows/deploy-pages.yml
+    - .github/workflows/readiness-audit.yml
+  fallback_commands: true
+```
+
+Orchestrator applies the packet with commands or equivalent API calls:
+
+```bash
+gh auth status
+gh repo edit --enable-issues --enable-projects
+
+gh label create agent-ready --color 35f2a3 --description "Ready for agent worker" --force
+gh label create blocked --color ff6d91 --description "Blocked by dependency or decision" --force
+gh label create qa-required --color ffc86b --description "Requires QA evidence before Done" --force
+
+gh project field-create <project-number> --owner <owner> --name Status --data-type SINGLE_SELECT --single-select-options "Intake,Ready,In Progress,Review,Blocked,Done"
+gh project field-create <project-number> --owner <owner> --name "Work Type" --data-type SINGLE_SELECT --single-select-options "Guide,Template,Automation,Site,Docs"
+gh project field-create <project-number> --owner <owner> --name Risk --data-type SINGLE_SELECT --single-select-options "Low,Medium,High"
+gh project field-create <project-number> --owner <owner> --name "QA Required" --data-type SINGLE_SELECT --single-select-options "Yes,No"
+```
+
+After applying the packet, Orchestrator returns a setup report:
+
+```yaml
+setup_report:
+  applied:
+    - repo settings
+    - labels
+    - project fields
+  skipped:
+    - project view automation when unsupported by current permissions
+  needs_human_action:
+    - exact Settings -> Pages action, only if API/tools cannot set it
+```
+
+`Human action required` must be precise. It must include the blocked setting,
+why automation could not apply it, the exact `gh` command or UI path, and the
+issue body / labels / Project fields needed to continue. It is not the default
+operating path.
 
 ## 3. GitHub Readiness Gate
 
@@ -210,29 +290,25 @@ If a field does not apply, write `none` and explain why.
 
 Use this path when the team is starting from a fresh repository.
 
-1. Create the repository and enable GitHub Issues, Pull Requests, Actions, and
-   Projects.
-2. Copy the workflow files:
-   - `AGENTS.md`;
-   - `docs/github-agent-workflow.md`;
-   - `.github/ISSUE_TEMPLATE/agent-task.yml`;
-   - `.github/ISSUE_TEMPLATE/config.yml`;
-   - `.github/pull_request_template.md`;
-   - `.github/workflows/deploy-pages.yml`;
-   - `.github/workflows/readiness-audit.yml`.
-3. Create the recommended labels:
-   `agent-ready`, `blocked`, `qa-required`, `security-review`,
-   `design-review`, `docs`, `automation`, `github-pages`, `workflow`.
-4. Create a GitHub Project with the fields from the Project Schema section.
-5. Create a `Ready Queue` view with `Status = Ready` and `label:agent-ready`.
-6. In repository Settings -> Pages, set the source to GitHub Actions.
-7. For a Vite project, set `base` to the Pages project path, for example
-   `/agent_workflow_guide_github_solutions/`.
-8. Create only the Brainstorm Chat, Planner Chat, and Orchestrator Chat.
-9. Give Orchestrator Chat GitHub tools, `gh`, or GitHub API access so it can
-   create the first GitHub Issue and Project state itself.
+1. Create the repository and give Orchestrator Chat GitHub tools, `gh`, or
+   GitHub API access.
+2. Create only the Brainstorm Chat, Planner Chat, and Orchestrator Chat.
+3. Paste the idea summary and canonical GitHub workflow into Planner Chat.
+4. Planner Chat returns `planner_yaml`, `canonical_md`, `orchestrator_prompt`,
+   and a `GitHub Setup Packet`.
+5. Paste the setup packet and orchestrator prompt into Orchestrator Chat.
+6. Orchestrator applies GitHub setup:
+   `gh repo edit --enable-issues --enable-projects`, `gh label create`, and
+   `gh project field-create`, or equivalent GitHub API calls.
+7. Orchestrator verifies the workflow files:
+   `AGENTS.md`, `docs/github-agent-workflow.md`, Issue Form config, PR
+   template, Pages deploy workflow, and readiness audit workflow.
+8. Orchestrator configures or verifies the Ready Queue:
+   `Status = Ready`, `label:agent-ready`, and no open blockers.
+9. Orchestrator creates the first GitHub Issues and Project state from the
+   Planner-approved work packets.
 10. Use the Agent task Issue Form only as fallback if Orchestrator reports
-   `Human action required`.
+    `Human action required`.
 
 The first pilot should cover the full loop:
 
@@ -301,12 +377,12 @@ Human creates only Brainstorm Chat, Planner Chat, and Orchestrator Chat.
 1. Настрой или обнови workflow так, чтобы он работал без Linear.
 2. Проверь, что GitHub Issue является контрактом задачи.
 3. Подготовь Orchestrator seed packet, чтобы Orchestrator creates GitHub Issues через GitHub tools / gh / GitHub API.
-4. Опиши labels, Project fields, readiness gate и fallback Issue Form path.
+4. Подготовь GitHub Setup Packet: repo_settings, labels, project_fields, ready_queue, pages, template_files, fallback_commands.
 5. Не создавай Worker Chats и не выполняй delivery work.
 
 Верни:
 - какие файлы/настройки изменены;
-- какие labels и Project fields нужны;
+- GitHub Setup Packet с командами gh repo edit --enable-issues --enable-projects, gh label create и gh project field-create;
 - Orchestrator seed packet;
 - какие будущие issues можно создать автоматически;
 - какие work items blocked и почему;
@@ -325,15 +401,18 @@ Use this before starting Worker Chat.
 Вход:
 - canonical GitHub workflow;
 - Planner handoff / seed packet;
+- GitHub Setup Packet;
 - repo and project configuration.
 
 Твоя задача:
-1. Создать или обновить GitHub Issues через GitHub tools / gh / GitHub API.
-2. Добавить labels и GitHub Project fields.
-3. Построить dependency graph по blockers/sub-issues/linked PRs.
-4. Применить readiness gate.
-5. Сгенерировать task-scoped Worker packet.
-6. Проверить QA block перед переводом в Review или Done.
+1. Orchestrator applies GitHub setup: проверь gh auth status, затем примени repo settings, labels, Project fields, Pages checks и template checks из packet.
+2. Используй gh repo edit --enable-issues --enable-projects для repo settings, gh label create --force для labels и gh project field-create для Project fields, если доступны права.
+3. Создать или обновить GitHub Issues через GitHub tools / gh / GitHub API.
+4. Добавить labels и GitHub Project fields.
+5. Построить dependency graph по blockers/sub-issues/linked PRs.
+6. Применить readiness gate.
+7. Сгенерировать task-scoped Worker packet.
+8. Проверить QA block перед переводом в Review или Done.
 
 Ready gate:
 - Project Status = Ready;
@@ -341,11 +420,11 @@ Ready gate:
 - нет открытых blockers;
 - issue body содержит Goal, Acceptance Criteria, Dependency / Blocker State, Validation Expectations, Security Impact, UI / Design Impact и QA Requirement.
 
-Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields и gh command.
+Issue Form is fallback: если GitHub tools/API недоступны, верни Human action required с готовым issue body, labels, Project fields, Pages action и gh commands.
 
 Не выполняй production code. Не делай delivery сам.
 
-Верни created/updated issue URLs, Project state, Worker packet и краткий state ledger comment.
+Верни setup_report, created/updated issue URLs, Project state, Worker packet и краткий state ledger comment.
 ```
 
 ### Worker delivery prompt
