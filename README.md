@@ -13,6 +13,12 @@ the published HTML page, follow the new-project or existing-project setup
 steps, copy the prompts, and configure the GitHub-native workflow without
 needing a separate Linear-style document.
 
+The intended operating model matches the Linear guide: the human creates only
+Brainstorm Chat, Planner Chat, and Orchestrator Chat. Orchestrator Chat creates
+GitHub Issues, labels, Project fields, worker packets, and state ledger updates
+through GitHub tools, `gh`, or the GitHub API. The Issue Form is a fallback when
+automation access is missing.
+
 ## Can This Be Published With GitHub Pages?
 
 Yes. GitHub Pages is a good fit for publishing this guide as a static
