@@ -39,11 +39,6 @@ test("workflow guide defines the GitHub-native operating model", () => {
     "Planner setup prompt",
     "Orchestrator queue prompt",
     "Worker delivery prompt",
-    "Automated idea-to-issue pipeline",
-    "One canonical package",
-    "Planner output YAML",
-    "Orchestrator intake prompt",
-    "gh issue create",
   ];
 
   for (const phrase of requiredPhrases) {
@@ -69,14 +64,6 @@ test("site source presents the workflow and GitHub Pages answer", () => {
     "Planner setup prompt",
     "Orchestrator queue prompt",
     "Worker delivery prompt",
-    "Automated idea-to-issue pipeline",
-    "One canonical package",
-    "Brainstorm-to-summary prompt",
-    "Canonical package builder prompt",
-    "Planner output YAML",
-    "Orchestrator intake prompt",
-    "GitHub Issue creation prompt",
-    "gh issue create",
   ];
 
   for (const phrase of requiredPhrases) {

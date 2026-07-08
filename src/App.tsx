@@ -19,12 +19,6 @@ type PromptBlock = {
   prompt: string;
 };
 
-type ArtifactBlock = {
-  title: string;
-  copy: string;
-  code: string;
-};
-
 const capabilities: Card[] = [
   {
     title: "GitHub Issues as the contract",
@@ -49,33 +43,6 @@ const flow = [
   ["02", "Orchestrator", "Select Ready + agent-ready issues, inspect blockers, and start one worker per issue."],
   ["03", "Worker", "Implement one issue in one branch and open one evidence-rich pull request."],
   ["04", "GitHub Pages", "Publish the operating model as a static presentation, not as orchestration state."],
-];
-
-const automationPipeline: Step[] = [
-  {
-    title: "1. Brainstorm idea",
-    copy: "Обсуди идею свободно: цель, аудитория, ценность, ограничения, риски и что точно не входит в scope.",
-  },
-  {
-    title: "2. Build idea summary",
-    copy: "Сожми brainstorm в короткое summary с goal, scope, out of scope, acceptance criteria, blockers, validation, security, design и QA.",
-  },
-  {
-    title: "3. Assemble One canonical package",
-    copy: "Собери summary, canonical markdown, Planner prompt, expected YAML, Orchestrator prompt и GitHub issue payload в один переносимый блок.",
-  },
-  {
-    title: "4. Send package to Planner",
-    copy: "Planner проверяет размер задачи, режет инициативу при необходимости и возвращает Planner output YAML для одной GitHub Issue.",
-  },
-  {
-    title: "5. Hand YAML to Orchestrator",
-    copy: "Orchestrator принимает canonical package + Planner output YAML, создает или обновляет GitHub Issue и выставляет labels/project fields.",
-  },
-  {
-    title: "6. Start Worker only after gate",
-    copy: "Worker получает handoff только после GitHub Issue URL, Project Status = Ready, label agent-ready и отсутствия blockers.",
-  },
 ];
 
 const newProjectSteps: Step[] = [
@@ -160,212 +127,6 @@ const templateFiles: Card[] = [
   {
     title: "readiness-audit.yml",
     copy: "Optional GitHub Action that comments when agent-ready is applied before required readiness sections exist.",
-  },
-];
-
-const canonicalPackageTemplate = `# Canonical Agent Work Package
-
-## idea_summary
-Short summary of the brainstormed idea, user goal, audience, and why now.
-
-## canonical_markdown
-### Goal
-...
-
-### User / Team Value
-...
-
-### Acceptance Criteria
-- [ ] ...
-- [ ] ...
-
-### Dependencies And Blockers
-- none
-
-### Validation Expectations
-Primary signal:
-Required checks:
-Manual verification:
-
-### Security Impact
-none / reviewed / security-sensitive
-
-### UI / Design Impact
-none / UI copy / visual state / full UI flow
-
-### QA Requirement
-required / low-risk exemption
-
-## planner_prompt
-Paste the Planner normalization prompt here.
-
-## planner_expected_yaml
-Planner must return valid YAML that matches the Planner output YAML contract.
-
-## orchestrator_prompt
-Paste the Orchestrator intake prompt here.
-
-## github_issue_payload
-Title:
-Labels:
-Project fields:
-Issue body:
-
-## readiness_gate
-Project Status = Ready
-label = agent-ready
-no open blockers`;
-
-const plannerOutputYaml = `title: "Short issue title"
-goal: "Outcome the issue must produce"
-acceptance_criteria:
-  - "Observable pass/fail criterion"
-dependencies:
-  - "none"
-blockers:
-  - "none"
-validation_expectations:
-  primary_signal: "What proves the work is correct"
-  required_checks:
-    - "npm run check"
-  manual_verification:
-    - "Open the Pages URL and confirm the new section is readable"
-security_impact:
-  level: "none"
-  notes: "No secrets, auth, permissions, or private data affected"
-design_impact:
-  level: "UI copy"
-  notes: "Static documentation section only"
-qa_requirement: "required"
-labels:
-  - "workflow"
-  - "agent-ready"
-project_fields:
-  Status: "Ready"
-  Work Type: "Docs"
-  Risk: "Low"
-  QA Required: "Yes"
-worker_brief: "Implement exactly this issue and open one PR with Closes #<issue>."
-orchestrator_notes: "Create or update the GitHub Issue, then verify readiness before starting Worker Chat."`;
-
-const ghIssueCommand = `gh issue create \\
-  --title "Short issue title" \\
-  --body-file /tmp/canonical-agent-issue.md \\
-  --label workflow \\
-  --label agent-ready`;
-
-const automationArtifacts: ArtifactBlock[] = [
-  {
-    title: "One canonical package",
-    copy: "Единый переносимый Markdown-блок после brainstorm. Его вставляют в Planner, а затем вместе с YAML передают Orchestrator.",
-    code: canonicalPackageTemplate,
-  },
-  {
-    title: "Planner output YAML",
-    copy: "Нормализованный machine-readable результат Planner. Он описывает одну GitHub Issue и не заменяет issue body после создания задачи.",
-    code: plannerOutputYaml,
-  },
-  {
-    title: "gh issue create",
-    copy: "Ускоренный путь для agents/power users. Ручной Issue Form остается базовым UX для команды.",
-    code: ghIssueCommand,
-  },
-];
-
-const automationPrompts: PromptBlock[] = [
-  {
-    title: "Brainstorm-to-summary prompt",
-    copy: "Используй после свободного обсуждения идеи, чтобы получить вход для canonical package.",
-    prompt: `Ты Brainstorm Summary Chat.
-
-Сожми обсуждение идеи в структурированное summary для GitHub-native agent workflow.
-
-Верни:
-- цель идеи;
-- для кого это делается;
-- почему это важно сейчас;
-- что входит в scope;
-- что не входит в scope;
-- 3-5 acceptance criteria;
-- известные blockers/dependencies;
-- validation expectations;
-- security/design/QA impact.
-
-Не создавай GitHub Issue. Подготовь summary для canonical package.`,
-  },
-  {
-    title: "Canonical package builder prompt",
-    copy: "Используй, чтобы собрать one canonical package из summary, canonical MD, prompts и issue payload.",
-    prompt: `Ты Canonical Package Builder для GitHub-native agent workflow.
-
-Возьми brainstorm summary и собери One canonical package.
-
-Package должен содержать:
-- idea_summary;
-- canonical_markdown;
-- planner_prompt;
-- planner_expected_yaml;
-- orchestrator_prompt;
-- github_issue_payload;
-- readiness_gate.
-
-Сделай package самодостаточным: Planner и Orchestrator должны понимать задачу без доступа к исходному чату brainstorm.`,
-  },
-  {
-    title: "Planner normalization prompt",
-    copy: "Используй, когда canonical package готов и Planner должен вернуть Planner output YAML.",
-    prompt: `Ты Planner Chat для GitHub-native agent workflow.
-
-Вход:
-1. One canonical package.
-2. Canonical markdown.
-3. Planner expected YAML contract.
-
-Твоя задача:
-1. Проверить, что идея помещается в одну GitHub Issue и один Worker PR.
-2. Если scope слишком большой, вернуть split recommendation вместо Ready YAML.
-3. Если scope нормальный, вернуть Planner output YAML.
-4. Запретить agent-ready, если не заполнены acceptance criteria, dependencies/blockers, validation, security, design или QA.
-
-Верни только валидный YAML плюс короткий human note после YAML.`,
-  },
-  {
-    title: "Orchestrator intake prompt",
-    copy: "Используй после Planner YAML, чтобы создать или обновить GitHub Issue и Project state.",
-    prompt: `Ты Orchestrator Chat для GitHub-native agent workflow.
-
-Вход:
-1. One canonical package.
-2. Planner output YAML.
-3. Canonical markdown.
-
-Твоя задача:
-1. Проверить YAML against readiness gate.
-2. Создать или обновить GitHub Issue через Issue Form path или gh issue create path.
-3. Добавить labels и GitHub Project fields из YAML.
-4. Если есть blockers, оставить issue в Intake или Blocked и написать blocker comment.
-5. Если gate выполнен, поставить Status = Ready и label agent-ready.
-6. Вернуть Worker handoff только после проверки GitHub Issue URL и Project state.
-
-Не запускай Worker Chat, если GitHub Issue не создана или readiness gate не выполнен.`,
-  },
-  {
-    title: "GitHub Issue creation prompt",
-    copy: "Используй, когда оператор хочет, чтобы агент создал issue через GitHub CLI.",
-    prompt: `Ты GitHub Issue Creation Agent.
-
-Вход:
-1. Planner output YAML.
-2. Canonical markdown.
-3. Target repository.
-
-Сделай:
-1. Создай issue body file из canonical markdown.
-2. Выполни gh issue create с title и labels из YAML.
-3. Верни issue URL.
-4. Сообщи, какие GitHub Project fields нужно выставить вручную или через API.
-
-Команда должна использовать gh issue create. Не добавляй agent-ready, если YAML не прошел readiness gate.`,
   },
 ];
 
@@ -485,7 +246,6 @@ function App() {
         </a>
         <nav aria-label="Primary navigation">
           <a href="#model">Model</a>
-          <a href="#automation">Automation</a>
           <a href="#setup">Setup</a>
           <a href="#gate">Gate</a>
           <a href="#prompts">Prompts</a>
@@ -503,8 +263,8 @@ function App() {
             GitHub Projects, Issue Forms, labels, PR templates, GitHub Actions, API automation, and GitHub Pages.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="#automation">
-              View automation
+            <a className="button primary" href="#setup">
+              Start setup
             </a>
             <a className="button secondary" href="#prompts">
               Copy prompts
@@ -622,36 +382,6 @@ no open blockers`}</pre>
         </div>
       </section>
 
-      <section className="automation section-band" id="automation">
-        <div className="section-heading">
-          <p className="eyebrow">Automated idea-to-issue pipeline</p>
-          <h2>Brainstorm to canonical package to GitHub Issue.</h2>
-          <p>
-            Этот v1 не требует backend-сервиса. Автоматизация держится на одном переносимом package, Planner output
-            YAML, Orchestrator intake prompt, GitHub Issue Form и ускоренном пути через gh issue create.
-          </p>
-        </div>
-        <div className="automation-lane" aria-label="Automation pipeline steps">
-          {automationPipeline.map((step) => (
-            <article className="automation-step" key={step.title}>
-              <h3>{step.title}</h3>
-              <p>{step.copy}</p>
-            </article>
-          ))}
-        </div>
-        <div className="artifact-grid">
-          {automationArtifacts.map((artifact) => (
-            <article className="artifact-card" key={artifact.title}>
-              <div>
-                <h3>{artifact.title}</h3>
-                <p>{artifact.copy}</p>
-              </div>
-              <pre>{artifact.code}</pre>
-            </article>
-          ))}
-        </div>
-      </section>
-
       <section className="setup-playbook section-band" id="setup">
         <div className="section-heading">
           <p className="eyebrow">Self-contained setup guide</p>
@@ -728,7 +458,7 @@ no open blockers`}</pre>
           </p>
         </div>
         <div className="prompt-grid">
-          {[...automationPrompts, ...prompts].map((prompt) => (
+          {prompts.map((prompt) => (
             <article className="prompt-card" key={prompt.title}>
               <div>
                 <h3>{prompt.title}</h3>
